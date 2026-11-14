@@ -60,7 +60,7 @@
     "emailChanged": "An canza imel.",
     "passwordReset": "An sake saita kalmar sirri. Da fatan shiga.",
     "resetCodeDockerHint": "Kana amfani da Docker? Lambar tana cikin tarihin kwantena: docker logs <container>.",
-    "desktopSessionFailed": "Dashboard ɗin bai iya shiga uwar garken gida ba. Rufe FreeLLMAPI ka sake buɗe shi."
+    "desktopSessionFailed": "Dashboard ɗin bai iya shiga uwar garken gida ba. Rufe FreeTier Router ka sake buɗe shi."
   },
   "common": {
     "save": "Ajiye",
@@ -110,7 +110,7 @@
     "sectionPreview": "Samfoti",
     "generalDescription": "Harshe da kamanni na wannan dashboard.",
     "startAtLogin": "Fara a farawar tsarin",
-    "startAtLoginHelp": "ƙaddamar da FreeLLMAPI ta atomatik lokacin shiga kwamfutarka.",
+    "startAtLoginHelp": "ƙaddamar da FreeTier Router ta atomatik lokacin shiga kwamfutarka.",
     "advancedDescription": "Iyaka da maɓallan tsaro na tsarin matsawa.",
     "compressionTitle": "Matsawar prompt",
     "compressionDescription": "Rage girman buƙata kafin turawa yayin da ake kiyaye kod, kurakurai, hanyoyi, lambobi da ma'anonin kayan aiki.",
@@ -162,16 +162,16 @@
     "notGitInstall": "Wannan shigarwar ba ta ƙunshi bayanan commit ba.",
     "checkFailed": "Ba a iya bincika sabuntawa ba.",
     "autoUpdateCheck": "Duba sabuntawa ta atomatik",
-    "restartAfterUpdate": "Sake kunna FreeLLMAPI bayan an gama build ɗin.",
+    "restartAfterUpdate": "Sake kunna FreeTier Router bayan an gama build ɗin.",
     "downloadUpdate": "Sauke sabuntawa",
     "downloadingUpdate": "Ana saukewa… {percent}%",
     "restartToUpdate": "Sake farawa don sabuntawa",
-    "updateReadyHint": "An sauke. FreeLLMAPI yana adana bayananka, sai ya sake farawa ya buɗe sabon sigar.",
+    "updateReadyHint": "An sauke. FreeTier Router yana adana bayananka, sai ya sake farawa ya buɗe sabon sigar.",
     "updateInstallFailed": "Ba a iya shigar da sabuntawar ba.",
     "updateNow": "Sabunta yanzu",
-    "updatingContainer": "Ana jan sabon hoto ana sake farawa. Wannan shafin zai sake lodawa idan FreeLLMAPI ya dawo.",
+    "updatingContainer": "Ana jan sabon hoto ana sake farawa. Wannan shafin zai sake lodawa idan FreeTier Router ya dawo.",
     "updateNowFailed": "Mai sabuntawa bai karɓi buƙatar ba. Duba ko kwantena watchtower yana aiki.",
-    "updateNowTimeout": "FreeLLMAPI bai sake farawa ba bayan minti 5. Duba bayanan log na kwantena watchtower."
+    "updateNowTimeout": "FreeTier Router bai sake farawa ba bayan minti 5. Duba bayanan log na kwantena watchtower."
   },
   "models": {
     "title": "Samfura",
@@ -194,7 +194,7 @@
     "monthlyTokenBudget": "Kasafin kudin alamar wata-wata",
     "remaining": "saura",
     "used": "amfani",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -1215,7 +1215,7 @@
   "update": {
     "available": "New version available",
     "dismiss": "Dismiss",
-    "newBuild": "An shigar da sabon sigar FreeLLMAPI.",
+    "newBuild": "An shigar da sabon sigar FreeTier Router.",
     "reload": "Sake lodawa"
   },
   "freeTier": {

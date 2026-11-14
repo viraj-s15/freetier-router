@@ -67,7 +67,7 @@ export function resolveLaunchModel(
     throw new UnknownModelError(
       `No model '${id}' in this gateway's catalog.`
       + (suggestions.length ? ` Did you mean: ${suggestions.join(', ')}?` : '')
-      + ' Run `freellmapi list-models` to see what is registered.',
+      + ' Run `freetier-router list-models` to see what is registered.',
     );
   }
 

@@ -60,7 +60,7 @@
     "emailChanged": "E-pošta je promijenjena.",
     "passwordReset": "Lozinka je poništena. Prijavite se.",
     "resetCodeDockerHint": "Koristite Docker? Kod se nalazi u zapisu kontejnera: docker logs <container>.",
-    "desktopSessionFailed": "Nadzorna ploča nije se uspjela prijaviti na lokalni poslužitelj. Zatvorite FreeLLMAPI i ponovno ga otvorite."
+    "desktopSessionFailed": "Nadzorna ploča nije se uspjela prijaviti na lokalni poslužitelj. Zatvorite FreeTier Router i ponovno ga otvorite."
   },
   "common": {
     "save": "Spasi",
@@ -110,7 +110,7 @@
     "sectionPreview": "Pregled",
     "generalDescription": "Jezik i izgled ove nadzorne ploče.",
     "startAtLogin": "Pokreni pri pokretanju sustava",
-    "startAtLoginHelp": "Automatski pokrenite FreeLLMAPI prilikom prijave na računalo.",
+    "startAtLoginHelp": "Automatski pokrenite FreeTier Router prilikom prijave na računalo.",
     "advancedDescription": "Pragovi i sigurnosne sklopke kompresijskog lanca.",
     "compressionTitle": "Kompresija promptova",
     "compressionDescription": "Smanjite veličinu zahtjeva prije usmjeravanja uz očuvanje koda, grešaka, putanja, brojeva i definicija alata.",
@@ -162,16 +162,16 @@
     "notGitInstall": "Ova instalacija ne sadrži informacije o commitovima.",
     "checkFailed": "Nije moguće provjeriti ažuriranja.",
     "autoUpdateCheck": "Automatska provjera ažuriranja",
-    "restartAfterUpdate": "Ponovno pokrenite FreeLLMAPI nakon dovršetka izgradnje.",
+    "restartAfterUpdate": "Ponovno pokrenite FreeTier Router nakon dovršetka izgradnje.",
     "downloadUpdate": "Preuzmi ažuriranje",
     "downloadingUpdate": "Preuzimanje… {percent} %",
     "restartToUpdate": "Ponovno pokreni za ažuriranje",
-    "updateReadyHint": "Preuzeto. FreeLLMAPI sigurnosno kopira vaše podatke, ponovno se pokreće i otvara novu verziju.",
+    "updateReadyHint": "Preuzeto. FreeTier Router sigurnosno kopira vaše podatke, ponovno se pokreće i otvara novu verziju.",
     "updateInstallFailed": "Ažuriranje se nije moglo instalirati.",
     "updateNow": "Ažuriraj sada",
-    "updatingContainer": "Preuzimanje nove slike i ponovno pokretanje. Stranica će se ponovno učitati kad se FreeLLMAPI vrati.",
+    "updatingContainer": "Preuzimanje nove slike i ponovno pokretanje. Stranica će se ponovno učitati kad se FreeTier Router vrati.",
     "updateNowFailed": "Ažurirač nije prihvatio zahtjev. Provjerite radi li kontejner watchtower.",
-    "updateNowTimeout": "FreeLLMAPI se nije ponovno pokrenuo nakon 5 minuta. Provjerite zapise kontejnera watchtower."
+    "updateNowTimeout": "FreeTier Router se nije ponovno pokrenuo nakon 5 minuta. Provjerite zapise kontejnera watchtower."
   },
   "models": {
     "title": "Modeli",
@@ -194,7 +194,7 @@
     "monthlyTokenBudget": "Mjesečni budžet tokena",
     "remaining": "Preostali",
     "used": "Korišteno",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -1215,7 +1215,7 @@
   "update": {
     "available": "New version available",
     "dismiss": "Dismiss",
-    "newBuild": "Instalirana je novija verzija FreeLLMAPI-ja.",
+    "newBuild": "Instalirana je novija verzija FreeTier Router-ja.",
     "reload": "Ponovno učitaj"
   },
   "freeTier": {

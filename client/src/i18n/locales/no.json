@@ -60,7 +60,7 @@
     "emailChanged": "E-posten er endret.",
     "passwordReset": "Passordet er tilbakestilt. Logg inn.",
     "resetCodeDockerHint": "Kjører du i Docker? Koden står i containerloggen: docker logs <container>.",
-    "desktopSessionFailed": "Dashbordet kunne ikke logge inn på den lokale serveren. Avslutt FreeLLMAPI og åpne det på nytt."
+    "desktopSessionFailed": "Dashbordet kunne ikke logge inn på den lokale serveren. Avslutt FreeTier Router og åpne det på nytt."
   },
   "common": {
     "save": "Lagre",
@@ -110,7 +110,7 @@
     "sectionPreview": "Forhåndsvisning",
     "generalDescription": "Språk og utseende for dette dashbordet.",
     "startAtLogin": "Start ved systemoppstart",
-    "startAtLoginHelp": "Start FreeLLMAPI automatisk når du logger på datamaskinen.",
+    "startAtLoginHelp": "Start FreeTier Router automatisk når du logger på datamaskinen.",
     "advancedDescription": "Terskler og sikkerhetsbrytere for komprimeringspipelinen.",
     "compressionTitle": "Promptkomprimering",
     "compressionDescription": "Reduser forespørselsstørrelsen før ruting, samtidig som kode, feil, stier, tall og verktøydefinisjoner bevares.",
@@ -162,16 +162,16 @@
     "notGitInstall": "Denne installasjonen inneholder ikke commit-informasjon.",
     "checkFailed": "Kunne ikke se etter oppdateringer.",
     "autoUpdateCheck": "Automatisk oppdateringssjekk",
-    "restartAfterUpdate": "Start FreeLLMAPI på nytt etter at byggingen er fullført.",
+    "restartAfterUpdate": "Start FreeTier Router på nytt etter at byggingen er fullført.",
     "downloadUpdate": "Last ned oppdatering",
     "downloadingUpdate": "Laster ned… {percent} %",
     "restartToUpdate": "Start på nytt for å oppdatere",
-    "updateReadyHint": "Lastet ned. FreeLLMAPI tar sikkerhetskopi av dataene dine, starter på nytt og åpner den nye versjonen.",
+    "updateReadyHint": "Lastet ned. FreeTier Router tar sikkerhetskopi av dataene dine, starter på nytt og åpner den nye versjonen.",
     "updateInstallFailed": "Oppdateringen kunne ikke installeres.",
     "updateNow": "Oppdater nå",
-    "updatingContainer": "Henter det nye imaget og starter på nytt. Siden lastes inn på nytt når FreeLLMAPI er tilbake.",
+    "updatingContainer": "Henter det nye imaget og starter på nytt. Siden lastes inn på nytt når FreeTier Router er tilbake.",
     "updateNowFailed": "Oppdateringstjenesten godtok ikke forespørselen. Sjekk at watchtower-containeren kjører.",
-    "updateNowTimeout": "FreeLLMAPI har ikke startet på nytt etter 5 minutter. Sjekk loggene til watchtower-containeren."
+    "updateNowTimeout": "FreeTier Router har ikke startet på nytt etter 5 minutter. Sjekk loggene til watchtower-containeren."
   },
   "models": {
     "title": "Modeller",
@@ -194,7 +194,7 @@
     "monthlyTokenBudget": "Månedlig tokenbudsjett",
     "remaining": "Gjenværende",
     "used": "Brukt",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -1215,7 +1215,7 @@
   "update": {
     "available": "New version available",
     "dismiss": "Dismiss",
-    "newBuild": "En nyere versjon av FreeLLMAPI er installert.",
+    "newBuild": "En nyere versjon av FreeTier Router er installert.",
     "reload": "Last inn på nytt"
   },
   "freeTier": {

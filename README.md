@@ -1,37 +1,39 @@
 <div align="center">
 
-# FreeLLMAPI
+# FreeTier Router
 
-**10.1 billion tokens per month.  87 free LLM providers. 1,313 free model endpoints. One OpenAI-compatible endpoint.**
+**Free-tier LLM router that finds new free models on the day providers list them.**
 
-Aggregate free tiers from dozens of providers, plus custom OpenAI-compatible chat, embedding, image, and audio endpoints, behind a single `/v1` API. Keys are stored encrypted. A router picks the best available model for each request, falls over to the next provider when one is rate-limited, and tracks per-key usage so you stay under every free-tier cap.
+FreeTier Router is an unofficial fork of [FreeLLMAPI](https://github.com/tashfeenahmed/freellmapi) by Tashfeen Ahmed, under the same MIT license. It aggregates free tiers from dozens of providers behind one OpenAI-compatible `/v1` endpoint, stores keys encrypted, routes each request to the best available model, and falls over to the next provider when one is rate-limited.
 
-[![CI](https://github.com/tashfeenahmed/freellmapi/actions/workflows/ci.yml/badge.svg)](https://github.com/tashfeenahmed/freellmapi/actions/workflows/ci.yml)
-[![GitHub stars](https://img.shields.io/github/stars/tashfeenahmed/freellmapi?style=flat&logo=github&color=yellow)](https://github.com/tashfeenahmed/freellmapi/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
-[![Docker image](https://img.shields.io/badge/ghcr.io-freellmapi-2496ED?logo=docker&logoColor=white)](https://github.com/tashfeenahmed/freellmapi/pkgs/container/freellmapi)
-[![Ask DeepWiki](https://img.shields.io/badge/DeepWiki-Ask-blue)](https://deepwiki.com/tashfeenahmed/freellmapi)
-
-**[freellmapi.co](https://freellmapi.co/?utm_source=github&utm_medium=readme&utm_campaign=repository&utm_content=readme_top)** · browse the full catalog: 736 model families, 1,313 free endpoints
+[![Upstream: FreeLLMAPI](https://img.shields.io/badge/upstream-FreeLLMAPI-blue)](https://github.com/tashfeenahmed/freellmapi)
 
 **English** · [Türkçe](README.tr.md) · [简体中文](README.zh-cn.md) · [Русский](README.ru.md) · [O'zbekcha](README.uz.md)
 
-<p align="center">
-  <a href="https://github.com/tashfeenahmed/freellmapi/releases/latest"><img src="repo-assets/badges/macos.svg" height="48" alt="Download for macOS"></a>
-  <a href="https://github.com/tashfeenahmed/freellmapi/releases/latest"><img src="repo-assets/badges/windows.svg" height="48" alt="Download for Windows"></a>
-  <a href="docs/en/install/01-install.md#docker-compose"><img src="repo-assets/badges/docker.svg" height="48" alt="Self-host with Docker"></a>
-  <a href="https://play.google.com/store/apps/details?id=co.freellmapi.app"><img src="repo-assets/badges/play-store.svg" height="48" alt="Get it on Google Play"></a>
-  <a href="https://apps.apple.com/app/id6804648934"><img src="repo-assets/badges/app-store.svg" height="48" alt="Download on the App Store"></a>
-</p>
-
-![FreeLLMAPI dashboard — Models page with the monthly token budget](repo-assets/github-hero.png)
-
-
-Your router updates its own model catalog from a signed feed: new free models, quota changes, and compatibility fixes land without a `git pull`. Free installs get the monthly snapshot, so a model reaches them 30 days after it joins the live feed; premium routers get it the same day.
-**[Go live at freellmapi.co](https://freellmapi.co/?utm_source=github&utm_medium=readme&utm_campaign=premium&utm_content=readme_top#pricing)** ($19/yr, cancel anytime).
-
 </div>
+
+## What this fork changes
+
+Upstream free installs get new models from a signed catalog snapshot that is 30 days behind the live feed. This fork keeps that free catalog for hand-checked metadata, and adds the provider's own model list on top:
+
+- Built-in model discovery is on by default (`BUILTIN_MODEL_DISCOVERY=auto`) for every built-in provider with an OpenAI-compatible `/models` endpoint. Upstream turns it on for two providers only.
+- A free policy for each provider (`server/src/services/free-policy.ts`) decides which listed models an automatic pass may add:
+  - `free-key`: `groq`, `mistral`, `sealion`. These keys can't be billed while the account has no payment method. **If you add a payment method to one of these accounts, set `BUILTIN_MODEL_DISCOVERY=manual`**, because discovery would then add models that can cost money.
+  - `priced-listing`: `openrouter`. Only models that `/models` prices at zero.
+  - `pattern`: `unorouter` (`*:free`) and `bazaarlink` (`auto:free`).
+  - Every other provider adds nothing automatically. You can still pick models under Fetch models on the key.
+- Free tiers have their own data terms. Mistral's free Experiment plan, for example, may use API requests for training unless you opt out in its Admin Console. Check each provider's terms before you send it private data.
+- A discovery pass runs every 6 hours (`BUILTIN_MODEL_DISCOVERY_INTERVAL_MS`) and when you save a key. A new model starts at the end of the fallback chain with limits of 10 requests per minute and 250 per day.
+- When the free catalog lists a discovered model, catalog sync adopts it and sets the real limits. Upstream deletes discovered models on any platform that the catalog manages, and the fork keeps them.
+- When the catalog drops a model, discovery doesn't add it back.
+
+The catalog still comes from `freellmapi.co`, twice a day, signed and verified. This project has no connection to FreeLLMAPI or Neu Software LLC. Their Premium live feed still works with this fork if you buy it from them.
+
+Settings for discovery are in [`.env.example`](.env.example) under "Model discovery". The rest of this README comes from upstream and still describes the shared features. Where it names FreeLLMAPI, read FreeTier Router, except for the catalog service and the Premium feed.
+
+![Dashboard, Models page](repo-assets/github-hero.png)
+
 
 ---
 
@@ -126,7 +128,7 @@ The full, always-current list lives at **[freellmapi.co/models](https://freellma
 Most agents configure themselves with one command that reads your live catalog, backs up the existing config and merges into it:
 
 ```bash
-npx freellmapi setup-claude --url http://localhost:3001 --api-key <unified-key>
+npx freetier-router setup-claude --url http://localhost:3001 --api-key <unified-key>
 ```
 
 **[All supported agents and their setup commands →](docs/en/clients/02-supported-agents.md)** · [Per-tool recipes, MCP server and URL tokens →](docs/en/clients/01-agent-clients.md)
@@ -163,33 +165,35 @@ The scope is deliberately narrow — see [what's not supported yet](docs/en/arch
 
 ## Quick start
 
-**One-liner** (Docker required — sets up `~/freellmapi`, generates an encryption key, pulls the image, and starts the container):
+This fork has no install script, npm package or published desktop release yet, so build it from source. You need Node.js 20 to 24 (the repo pins 22 in `.nvmrc`).
 
 ```bash
-curl -fsSL https://freellmapi.co/install.sh | bash
+git clone https://github.com/viraj-s15/freetier-router.git
+cd freetier-router
+npm ci
+ENCRYPTION_KEY="$(node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))')"
+printf "ENCRYPTION_KEY=%s\nPORT=3001\n" "$ENCRYPTION_KEY" > .env
+npm run build
+node server/dist/index.js     # server and dashboard on http://localhost:3001
 ```
 
-Prefer to read before you pipe to bash? [The script is here](https://freellmapi.co/install.sh). Re-running it is safe: your `.env` (and encryption key) is preserved and the container updates to `:latest`.
+With Docker, `docker compose up -d --build` builds the image from this checkout.
 
-Open http://localhost:3001, add your provider keys on the **Keys** page, reorder the **Fallback Chain** to taste, and grab your unified API key from the **Keys** page header. That unified key is what you point your OpenAI SDK at.
+Open http://localhost:3001, add your provider keys on the **Keys** page, reorder the **Fallback Chain** to taste, and copy your unified API key from the **Keys** page header. That unified key is what you point your OpenAI SDK at.
 
-On Windows, the easiest path is the desktop **[`.exe` installer from Releases](https://github.com/tashfeenahmed/freellmapi/releases/latest)** (below). On Android, see the experimental [Termux guide](docs/en/install/02-android-termux.md).
-
-Everything else — Docker Compose, local development, declarative startup config, production builds, LAN access, and backups — is in **[docs/en/install/01-install.md](docs/en/install/01-install.md)**.
+Everything else (local development, declarative startup config, LAN access and backups) is in **[docs/en/install/01-install.md](docs/en/install/01-install.md)**. Those docs come from upstream, so replace upstream install commands with the steps above.
 
 ## Desktop app
 
 A native menu-bar app lives in [`desktop/`](./desktop): the entire router + dashboard running locally from your tray, with a glass popover showing live request stats.
 
-![FreeLLMAPI desktop app](repo-assets/desktop.png)
+![Desktop app](repo-assets/desktop.png)
 
-**[Download from Releases](https://github.com/tashfeenahmed/freellmapi/releases/latest)** — the macOS `.dmg` and the Windows `.exe` installer are attached to every release. No account or password to set up: the only credential you need is the unified API key from the tray popover. Build-from-source steps and where your data lives: [docs/en/install/01-install.md#desktop-app](docs/en/install/01-install.md#desktop-app).
-
-For macOS 12 Monterey or later, choose **arm64 (Apple Silicon)** or **x64 (Intel)**. Both Mac builds also include a ZIP download.
+The fork publishes no desktop release yet. Build it from source with `npm run desktop:dist` (steps and where your data lives: [docs/en/install/01-install.md#desktop-app](docs/en/install/01-install.md#desktop-app)). It keeps its data in its own folder, `FreeTier Router`, so it never reads or changes an upstream FreeLLMAPI desktop install.
 
 ## Works with OpenAI-compatible clients
 
-Anything that can target an OpenAI-compatible base URL works: set it to `http://localhost:3001/v1` with the unified key from the dashboard. Every generator supports `--dry-run`; `npx freellmapi launch` (Claude Code) and `launch-codex` (Codex) keep credentials out of config files entirely. The router also doubles as an MCP server your agents can introspect mid-session.
+Anything that can target an OpenAI-compatible base URL works: set it to `http://localhost:3001/v1` with the unified key from the dashboard. Every generator supports `--dry-run`; `npx freetier-router launch` (Claude Code, run from the repo folder) and `launch-codex` (Codex) keep credentials out of config files entirely. The router also doubles as an MCP server your agents can introspect mid-session.
 
 **ChatGPT** connects to the same local router through a private Secure MCP Tunnel. The
 `ask_freellmapi` MCP tool routes a ChatGPT-requested task through `/v1/chat/completions` and
@@ -198,7 +202,7 @@ URL and bearer authentication live in the tunnel-client configuration; the defau
 set with `MCP_INFERENCE_DEFAULT_MODEL` (`auto` when unset). No key belongs in Git or in the
 MCP URL. **[ChatGPT setup →](docs/en/clients/01-agent-clients.md#chatgpt-private-secure-mcp-tunnel)**
 
-Provider keys can be managed from the terminal too, with a dashboard session token (`FREELLMAPI_DASHBOARD_TOKEN` or `--token`): `npx freellmapi keys add|list|remove|test <platform>`, where `keys test` re-checks stored keys. See [cli/README.md](cli/README.md#provider-keys).
+Provider keys can be managed from the terminal too, with a dashboard session token (`FREELLMAPI_DASHBOARD_TOKEN` or `--token`): `npx freetier-router keys add|list|remove|test <platform>`, where `keys test` re-checks stored keys. See [cli/README.md](cli/README.md#provider-keys).
 
 FreeLLMAPI is local-first and single-user by design. Your provider keys stay in your SQLite database, encrypted at rest, and requests go from your machine to the upstream providers you enabled.
 

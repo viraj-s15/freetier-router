@@ -1,3 +1,5 @@
+> **FreeTier Router** is an unofficial fork of FreeLLMAPI. This translation comes from upstream. For what the fork changes, how to install it, and its free-policy billing note, read the [English README](README.md#what-this-fork-changes).
+
 <div align="center">
 
 # FreeLLMAPI

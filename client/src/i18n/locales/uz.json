@@ -60,7 +60,7 @@
     "emailChanged": "E-pochta muvaffaqiyatli o'zgartirildi.",
     "passwordReset": "Parol tiklandi. Iltimos, kiring.",
     "resetCodeDockerHint": "Docker ichida ishlayaptimi? Kod konteyner jurnalida: docker logs <container>.",
-    "desktopSessionFailed": "Boshqaruv paneli lokal serverga kira olmadi. FreeLLMAPI dasturini yopib, qayta oching."
+    "desktopSessionFailed": "Boshqaruv paneli lokal serverga kira olmadi. FreeTier Router dasturini yopib, qayta oching."
   },
   "common": {
     "save": "Saqlash",
@@ -110,7 +110,7 @@
     "sectionPreview": "Oldindan ko'rish",
     "generalDescription": "Ushbu boshqaruv panelining tili va ko'rinishi.",
     "startAtLogin": "Tizim ishga tushganda ishga tushirish",
-    "startAtLoginHelp": "Kompyuteringizga kirganingizda FreeLLMAPI avtomatik ravishda ishga tushsin.",
+    "startAtLoginHelp": "Kompyuteringizga kirganingizda FreeTier Router avtomatik ravishda ishga tushsin.",
     "advancedDescription": "Siqish jarayoni uchun chegaralar va xavfsizlik kalitlari.",
     "compressionTitle": "Promptni siqish",
     "compressionDescription": "Kod, xatolar, yo'llar, raqamlar va vosita ta'riflarini saqlagan holda marshrutlashdan oldin so'rov hajmini kamaytiring.",
@@ -162,16 +162,16 @@
     "notGitInstall": "Bu o'rnatishda commit ma'lumoti mavjud emas.",
     "checkFailed": "Yangilanishlarni tekshirib bo'lmadi.",
     "autoUpdateCheck": "Avtomatik yangilanish tekshiruvi",
-    "restartAfterUpdate": "Build tugagach, FreeLLMAPI'ni qayta ishga tushiring.",
+    "restartAfterUpdate": "Build tugagach, FreeTier Router'ni qayta ishga tushiring.",
     "downloadUpdate": "Yangilanishni yuklab olish",
     "downloadingUpdate": "Yuklab olinmoqda… {percent}%",
     "restartToUpdate": "Yangilash uchun qayta ishga tushirish",
-    "updateReadyHint": "Yuklab olindi. FreeLLMAPI maʼlumotlaringizning zaxira nusxasini oladi, qayta ishga tushadi va yangi versiyani ochadi.",
+    "updateReadyHint": "Yuklab olindi. FreeTier Router maʼlumotlaringizning zaxira nusxasini oladi, qayta ishga tushadi va yangi versiyani ochadi.",
     "updateInstallFailed": "Yangilanishni o‘rnatib bo‘lmadi.",
     "updateNow": "Hozir yangilash",
-    "updatingContainer": "Yangi obraz yuklab olinmoqda va qayta ishga tushirilmoqda. FreeLLMAPI qaytganda bu sahifa qayta yuklanadi.",
+    "updatingContainer": "Yangi obraz yuklab olinmoqda va qayta ishga tushirilmoqda. FreeTier Router qaytganda bu sahifa qayta yuklanadi.",
     "updateNowFailed": "Yangilovchi so‘rovni qabul qilmadi. watchtower konteyneri ishlayotganini tekshiring.",
-    "updateNowTimeout": "FreeLLMAPI 5 daqiqadan keyin ham qayta ishga tushmadi. watchtower konteyneri jurnallarini tekshiring."
+    "updateNowTimeout": "FreeTier Router 5 daqiqadan keyin ham qayta ishga tushmadi. watchtower konteyneri jurnallarini tekshiring."
   },
   "models": {
     "title": "Modellar",
@@ -194,7 +194,7 @@
     "monthlyTokenBudget": "Oylik token byudjeti",
     "remaining": "qolgan",
     "used": "ishlatilgan",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -1215,7 +1215,7 @@
   "update": {
     "available": "New version available",
     "dismiss": "Dismiss",
-    "newBuild": "FreeLLMAPI ning yangiroq versiyasi o‘rnatilgan.",
+    "newBuild": "FreeTier Router ning yangiroq versiyasi o‘rnatilgan.",
     "reload": "Qayta yuklash"
   },
   "freeTier": {

@@ -1,5 +1,8 @@
-appId: com.freellmapi.desktop
-productName: FreeLLMAPI
+appId: io.github.viraj-s15.freetier-router
+productName: FreeTier Router
+# The visible name has a space; every artifact name spells it without one,
+# because the updater looks a file up by the name latest.yml records.
+artifactName: "FreeTierRouter-${version}.${ext}"
 directories:
   output: dist-electron
 files:
@@ -16,8 +19,8 @@ files:
 # attaches the files itself. See #703.
 publish:
   provider: github
-  owner: tashfeenahmed
-  repo: freellmapi
+  owner: viraj-s15
+  repo: freetier-router
 asar: true
 # Linux chrome-sandbox must be mode 4755 (setuid) in the .deb; otherwise
 # Electron aborts at launch (#1229). Path is relative to desktop/.
@@ -34,7 +37,7 @@ extraResources:
   - from: client-dist
     to: client-dist
 mac:
-  artifactName: "${productName}-${version}-macos-${arch}.${ext}"
+  artifactName: "FreeTierRouter-${version}-macos-${arch}.${ext}"
   category: public.app-category.developer-tools
   icon: assets/icon.icns
   hardenedRuntime: true
@@ -89,11 +92,11 @@ linux:
       arch:
         - x64
 nsis:
-  # electron-builder's default NSIS name has spaces ("FreeLLMAPI Setup x.y.z.exe")
+  # electron-builder's default NSIS name has spaces ("FreeTier Router Setup x.y.z.exe")
   # and latest.yml records it with dashes, while GitHub stores the upload with
   # dots — so the updater asked for a file the release did not have. A name with
   # no spaces is the same string in all three places.
-  artifactName: "${productName}-Setup-${version}.${ext}"
+  artifactName: "FreeTierRouter-Setup-${version}.${ext}"
   oneClick: true
   # Grants the GPU sandbox read access to the install folder (#1759).
   include: installer/installer.nsh
