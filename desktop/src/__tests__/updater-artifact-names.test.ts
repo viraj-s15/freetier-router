@@ -33,12 +33,12 @@ describe('updater artifact names', () => {
   });
 
   it('names the Windows installer the way latest.yml will', () => {
-    expect(expand(config.nsis.artifactName)).toBe('FreeLLMAPI-Setup-1.2.3.exe');
+    expect(expand(config.nsis.artifactName)).toBe('FreeTierRouter-Setup-1.2.3.exe');
   });
 
   it.each(['arm64', 'x64'])('identifies macOS %s downloads by platform and architecture', (arch) => {
     for (const ext of ['zip', 'dmg']) {
-      expect(expand(config.mac.artifactName, arch, ext)).toBe(`FreeLLMAPI-1.2.3-macos-${arch}.${ext}`);
+      expect(expand(config.mac.artifactName, arch, ext)).toBe(`FreeTierRouter-1.2.3-macos-${arch}.${ext}`);
     }
   });
 });

@@ -60,7 +60,7 @@
     "emailChanged": "E-mail byl změněn.",
     "passwordReset": "Heslo bylo resetováno. Přihlaste se.",
     "resetCodeDockerHint": "Používáte Docker? Kód je v logu kontejneru: docker logs <container>.",
-    "desktopSessionFailed": "Řídicí panel se nedokázal přihlásit k místnímu serveru. Ukončete FreeLLMAPI a spusťte jej znovu."
+    "desktopSessionFailed": "Řídicí panel se nedokázal přihlásit k místnímu serveru. Ukončete FreeTier Router a spusťte jej znovu."
   },
   "common": {
     "save": "Uložit",
@@ -110,7 +110,7 @@
     "sectionPreview": "Náhled",
     "generalDescription": "Jazyk a vzhled tohoto panelu.",
     "startAtLogin": "Spustit při startu systému",
-    "startAtLoginHelp": "Po přihlášení k počítači automaticky spustí FreeLLMAPI.",
+    "startAtLoginHelp": "Po přihlášení k počítači automaticky spustí FreeTier Router.",
     "advancedDescription": "Prahové hodnoty a pojistky kompresního řetězce.",
     "compressionTitle": "Komprese promptů",
     "compressionDescription": "Zmenšete velikost požadavku před směrováním se zachováním kódu, chyb, cest, čísel a definic nástrojů.",
@@ -162,16 +162,16 @@
     "notGitInstall": "Tato instalace neobsahuje informace o commitu.",
     "checkFailed": "Aktualizace se nepodařilo zkontrolovat.",
     "autoUpdateCheck": "Automatická kontrola aktualizací",
-    "restartAfterUpdate": "Po dokončení sestavení restartujte FreeLLMAPI.",
+    "restartAfterUpdate": "Po dokončení sestavení restartujte FreeTier Router.",
     "downloadUpdate": "Stáhnout aktualizaci",
     "downloadingUpdate": "Stahování… {percent} %",
     "restartToUpdate": "Restartovat a aktualizovat",
-    "updateReadyHint": "Staženo. FreeLLMAPI zálohuje vaše data, restartuje se a otevře novou verzi.",
+    "updateReadyHint": "Staženo. FreeTier Router zálohuje vaše data, restartuje se a otevře novou verzi.",
     "updateInstallFailed": "Aktualizaci se nepodařilo nainstalovat.",
     "updateNow": "Aktualizovat nyní",
-    "updatingContainer": "Stahuje se nový obraz a probíhá restart. Stránka se znovu načte, až bude FreeLLMAPI zpět.",
+    "updatingContainer": "Stahuje se nový obraz a probíhá restart. Stránka se znovu načte, až bude FreeTier Router zpět.",
     "updateNowFailed": "Aktualizátor požadavek nepřijal. Zkontrolujte, že kontejner watchtower běží.",
-    "updateNowTimeout": "FreeLLMAPI se ani po 5 minutách nerestartoval. Zkontrolujte logy kontejneru watchtower."
+    "updateNowTimeout": "FreeTier Router se ani po 5 minutách nerestartoval. Zkontrolujte logy kontejneru watchtower."
   },
   "models": {
     "title": "Modely",
@@ -194,7 +194,7 @@
     "monthlyTokenBudget": "Měsíční rozpočet žetonů",
     "remaining": "Zbývající",
     "used": "Používané",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -1215,7 +1215,7 @@
   "update": {
     "available": "New version available",
     "dismiss": "Dismiss",
-    "newBuild": "Je nainstalována novější verze FreeLLMAPI.",
+    "newBuild": "Je nainstalována novější verze FreeTier Router.",
     "reload": "Načíst znovu"
   },
   "freeTier": {

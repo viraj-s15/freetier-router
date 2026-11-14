@@ -19,8 +19,8 @@ const DEFAULT_PORT = 31415;
 // Lean posture: one instance, menu-bar only. GPU stays ON — vibrancy
 // (the popover/dashboard glass) needs GPU compositing; with hardware
 // acceleration disabled, transparent windows render an opaque white.
-app.setName('FreeLLMAPI');
-app.setPath('userData', path.join(app.getPath('appData'), 'FreeLLMAPI'));
+app.setName('FreeTier Router');
+app.setPath('userData', path.join(app.getPath('appData'), 'FreeTier Router'));
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -187,7 +187,7 @@ if (!app.requestSingleInstanceLock()) {
         defaultId: 1,
         cancelId: 1,
         title: 'Allow LAN access',
-        message: 'Expose FreeLLMAPI to your local network?',
+        message: 'Expose FreeTier Router to your local network?',
         detail:
           'The server will bind to 0.0.0.0 so other devices (Tailscale, VMs, ' +
           'phones on your Wi-Fi) can reach it at http://<this-machine-ip>:' +
@@ -225,15 +225,15 @@ if (!app.requestSingleInstanceLock()) {
 
     const choice = dialog.showMessageBoxSync({
       type: 'info',
-      title: 'FreeLLMAPI has no menu-bar icon',
-      message: 'macOS is not showing the FreeLLMAPI menu-bar icon.',
+      title: 'FreeTier Router has no menu-bar icon',
+      message: 'macOS is not showing the FreeTier Router menu-bar icon.',
       detail:
         'The app and its API are running normally, but the icon everything else ' +
         'hangs off is not being drawn, so there is nothing to click.\n\n' +
-        'To bring it back: System Settings > Menu Bar, find FreeLLMAPI and set it ' +
+        'To bring it back: System Settings > Menu Bar, find FreeTier Router and set it ' +
         'to Allow. On a Mac with a notch, quitting a few other menu-bar apps can ' +
         'also free up the room it needs.\n\n' +
-        'Until then, relaunching FreeLLMAPI from Finder opens the dashboard.',
+        'Until then, relaunching FreeTier Router from Finder opens the dashboard.',
       buttons: ['Open Dashboard', 'Continue in Background'],
       defaultId: 0,
       cancelId: 1,
@@ -325,7 +325,7 @@ if (!app.requestSingleInstanceLock()) {
       } catch (err) {
         console.warn('[desktop] could not create the tray icon:', err);
       }
-      console.log(`[desktop] FreeLLMAPI running on http://${host}:${port}${cfg.lanAccess ? ' (LAN access enabled)' : ''}`);
+      console.log(`[desktop] FreeTier Router running on http://${host}:${port}${cfg.lanAccess ? ' (LAN access enabled)' : ''}`);
       // A tray that macOS refuses to draw still constructs cleanly, so the only
       // way to notice is to look at where the item landed (#807).
       if (tray && process.platform === 'darwin') {
@@ -383,7 +383,7 @@ if (!app.requestSingleInstanceLock()) {
       }
     } catch (err: any) {
       dialog.showErrorBox(
-        'FreeLLMAPI failed to start',
+        'FreeTier Router failed to start',
         err?.message ?? String(err),
       );
       app.quit();

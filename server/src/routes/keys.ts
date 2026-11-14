@@ -31,6 +31,7 @@ import {
   registeredModelIds,
   triggerBuiltinModelDiscovery,
 } from '../services/builtin-model-discovery.js';
+import { policyCanAccept } from '../services/free-policy.js';
 import type { Db } from '../db/types.js';
 import type { Platform } from '@freellmapi/shared/types.js';
 import { parseModelScope } from '../lib/model-scope.js';
@@ -315,10 +316,11 @@ function noModelsNotice(platform: string): string | undefined {
   if (isSearchPlatform(platform)) {
     return `Key saved, but no ${platform} search engine is turned on. Turn it on from Models → Search.`;
   }
-  // #1348: a built-in provider the catalog does not carry fills its model list
-  // from its own /models, so the Premium and custom-provider advice below
-  // would send the operator the wrong way.
-  if (isBuiltinDiscoveryEligible(getDb(), platform)) {
+  // #1348: a built-in provider whose free policy can accept models fills its
+  // list from its own /models, so the Premium and custom-provider advice below
+  // would send the operator the wrong way. Any other provider keeps that
+  // advice, because nothing arrives on its own.
+  if (isBuiltinDiscoveryEligible(getDb(), platform) && policyCanAccept(platform)) {
     return builtinDiscoveryMode() === 'auto'
       ? `Key saved. The catalog does not list ${platform} models, so they are being fetched from ${platform}'s own model list. ` +
         `Use Fetch models on the key to review them or add more.`

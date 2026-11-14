@@ -1,6 +1,6 @@
 services:
   freellmapi:
-    image: ghcr.io/tashfeenahmed/freellmapi:latest
+    image: ghcr.io/viraj-s15/freetier-router:latest
     build:
       context: .
       dockerfile: Dockerfile

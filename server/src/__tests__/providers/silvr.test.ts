@@ -4,7 +4,7 @@ import { getProvider } from '../../providers/index.js';
 import { SilvrProvider, SILVR_BASE_URL } from '../../providers/silvr.js';
 import { parseKeysFromFile } from '../../lib/key-parser.js';
 import { inferPoolForPlatform } from '../../services/provider-quota.js';
-import { isBuiltinDiscoveryEligible } from '../../services/builtin-model-discovery.js';
+import { policyCanAccept } from '../../services/free-policy.js';
 const model = 'glm-5-3', messages = [{ role: 'user' as const, content: 'Hi' }];
 const completion = (identity: unknown = model, content: unknown = 'OK') => ({ id: 'test', object: 'chat.completion', created: 1, model: identity, choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: 'stop' }] });
 const event = (identity: unknown = model) => ({ id: 'test', object: 'chat.completion.chunk', created: 1, model: identity, choices: [{ index: 0, delta: { content: 'OK' }, finish_reason: null }] });
@@ -15,7 +15,7 @@ describe('SilvR catalog-only chat', () => {
     const provider = getProvider('silvr')!; const fetch = vi.spyOn(global, 'fetch');
     expect(provider).toBeInstanceOf(SilvrProvider); expect(provider.supportsKeyValidation).toBe(false);
     await expect(provider.validateKey('test')).rejects.toThrow('first completion'); expect(fetch).not.toHaveBeenCalled();
-    expect(isBuiltinDiscoveryEligible(getDb(), 'silvr')).toBe(false);
+    expect(policyCanAccept('silvr')).toBe(false); // freetier-router: no automatic discovery
     expect(parseKeysFromFile('SILVR_API_KEY=synthetic', 'keys.env').keys[0]).toMatchObject({ platform: 'silvr', rawKey: 'SILVR_API_KEY=synthetic' });
     expect(inferPoolForPlatform('silvr', model)).toBe('silvr::daily-free');
     expect(inferPoolForPlatform('silvr', 'another')).toBe(inferPoolForPlatform('silvr', model));

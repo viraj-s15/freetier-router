@@ -60,7 +60,7 @@
     "emailChanged": "ኢሜይል በተሳካ ሁኔታ ተቀይሯል።",
     "passwordReset": "የይለፍ ቃል ዳግም ተጀምሯል። እባክዎ ይግቡ።",
     "resetCodeDockerHint": "በ Docker ውስጥ እየሮጠ ነው? ኮዱ በኮንቴይነሩ መዝገብ ውስጥ ነው፦ docker logs <container>።",
-    "desktopSessionFailed": "ዳሽቦርዱ ወደ አካባቢያዊ አገልጋዩ መግባት አልቻለም። FreeLLMAPI ን ዘግተው እንደገና ይክፈቱት።"
+    "desktopSessionFailed": "ዳሽቦርዱ ወደ አካባቢያዊ አገልጋዩ መግባት አልቻለም። FreeTier Router ን ዘግተው እንደገና ይክፈቱት።"
   },
   "common": {
     "save": "አስቀምጥ",
@@ -110,7 +110,7 @@
     "sectionPreview": "ቅድመ-እይታ",
     "generalDescription": "የዚህ ዳሽቦርድ ቋንቋ እና አቀራረብ።",
     "startAtLogin": "በስርዓት ሲጀመር ይጀምሩ",
-    "startAtLoginHelp": "ወደ ኮምፒውተርዎ ሲገቡ FreeLLMAPI በራስ-ሰር ያስነሱ",
+    "startAtLoginHelp": "ወደ ኮምፒውተርዎ ሲገቡ FreeTier Router በራስ-ሰር ያስነሱ",
     "advancedDescription": "የጭመቃ ሂደት ገደቦች እና የደህንነት መቀየሪያዎች።",
     "compressionTitle": "የፕሮምፕት ጭመቃ",
     "compressionDescription": "ኮድን፣ ስህተቶችን፣ ዱካዎችን፣ ቁጥሮችን እና የመሣሪያ ትርጓሜዎችን በመጠበቅ ከመላክ በፊት የጥያቄውን መጠን ይቀንሱ።",
@@ -162,16 +162,16 @@
     "notGitInstall": "ይህ ጭነት የcommit መረጃን አያካትትም።",
     "checkFailed": "ዝማኔዎችን መፈተሽ አልተቻለም።",
     "autoUpdateCheck": "ራስ-ሰር የዝማኔ ፍተሻ",
-    "restartAfterUpdate": "ግንባታው ከተጠናቀቀ በኋላ FreeLLMAPIን እንደገና ያስጀምሩ።",
+    "restartAfterUpdate": "ግንባታው ከተጠናቀቀ በኋላ FreeTier Routerን እንደገና ያስጀምሩ።",
     "downloadUpdate": "ዝማኔ አውርድ",
     "downloadingUpdate": "በማውረድ ላይ… {percent}%",
     "restartToUpdate": "ለማዘመን እንደገና አስጀምር",
-    "updateReadyHint": "ወርዷል። FreeLLMAPI ውሂብዎን ያስቀምጣል፣ እንደገና ይጀምራል እና አዲሱን ስሪት ይከፍታል።",
+    "updateReadyHint": "ወርዷል። FreeTier Router ውሂብዎን ያስቀምጣል፣ እንደገና ይጀምራል እና አዲሱን ስሪት ይከፍታል።",
     "updateInstallFailed": "ዝማኔው ሊጫን አልቻለም።",
     "updateNow": "አሁን አዘምን",
-    "updatingContainer": "አዲሱን ምስል እያወረደ እንደገና በመጀመር ላይ። FreeLLMAPI ሲመለስ ይህ ገጽ እንደገና ይጫናል።",
+    "updatingContainer": "አዲሱን ምስል እያወረደ እንደገና በመጀመር ላይ። FreeTier Router ሲመለስ ይህ ገጽ እንደገና ይጫናል።",
     "updateNowFailed": "አዘማኙ ጥያቄውን አልተቀበለም። የwatchtower ኮንቴይነር እየሰራ መሆኑን ያረጋግጡ።",
-    "updateNowTimeout": "FreeLLMAPI ከ5 ደቂቃ በኋላም እንደገና አልጀመረም። የwatchtower ኮንቴይነርን ምዝግብ ማስታወሻዎች ይመልከቱ።"
+    "updateNowTimeout": "FreeTier Router ከ5 ደቂቃ በኋላም እንደገና አልጀመረም። የwatchtower ኮንቴይነርን ምዝግብ ማስታወሻዎች ይመልከቱ።"
   },
   "models": {
     "title": "ሞዴሎች",
@@ -194,7 +194,7 @@
     "monthlyTokenBudget": "ወርሃዊ ማስመሰያ በጀት",
     "remaining": "የቀረው",
     "used": "ጥቅም ላይ ውሏል",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -1215,7 +1215,7 @@
   "update": {
     "available": "New version available",
     "dismiss": "Dismiss",
-    "newBuild": "አዲስ የFreeLLMAPI ስሪት ተጭኗል።",
+    "newBuild": "አዲስ የFreeTier Router ስሪት ተጭኗል።",
     "reload": "እንደገና ጫን"
   },
   "freeTier": {

@@ -60,7 +60,7 @@
     "emailChanged": "Matagumpay na napalitan ang e-mail.",
     "passwordReset": "Na-reset ang password. Mag-sign in po.",
     "resetCodeDockerHint": "Tumatakbo sa Docker? Nasa container log ang code: docker logs <container>.",
-    "desktopSessionFailed": "Hindi nakapag-sign in ang dashboard sa lokal na server. Isara ang FreeLLMAPI at buksan itong muli."
+    "desktopSessionFailed": "Hindi nakapag-sign in ang dashboard sa lokal na server. Isara ang FreeTier Router at buksan itong muli."
   },
   "common": {
     "save": "I-save",
@@ -110,7 +110,7 @@
     "sectionPreview": "Preview",
     "generalDescription": "Wika at hitsura ng dashboard na ito.",
     "startAtLogin": "Magsimula sa pagsisimula ng system",
-    "startAtLoginHelp": "Ilunsad ang FreeLLMAPI nang awtomatiko kapag nag-sign in ka sa iyong computer.",
+    "startAtLoginHelp": "Ilunsad ang FreeTier Router nang awtomatiko kapag nag-sign in ka sa iyong computer.",
     "advancedDescription": "Mga threshold at safety switch para sa compression pipeline.",
     "compressionTitle": "Compression ng prompt",
     "compressionDescription": "Bawasan ang laki ng request bago ang routing habang pinapanatili ang code, mga error, path, numero, at tool definition.",
@@ -162,16 +162,16 @@
     "notGitInstall": "Walang impormasyon ng commit ang installation na ito.",
     "checkFailed": "Hindi masuri kung may mga update.",
     "autoUpdateCheck": "Awtomatikong pagsusuri ng update",
-    "restartAfterUpdate": "I-restart ang FreeLLMAPI kapag natapos ang build.",
+    "restartAfterUpdate": "I-restart ang FreeTier Router kapag natapos ang build.",
     "downloadUpdate": "I-download ang update",
     "downloadingUpdate": "Nagda-download… {percent}%",
     "restartToUpdate": "I-restart para mag-update",
-    "updateReadyHint": "Na-download na. Iba-backup ng FreeLLMAPI ang iyong data, magre-restart, at bubuksan ang bagong bersyon.",
+    "updateReadyHint": "Na-download na. Iba-backup ng FreeTier Router ang iyong data, magre-restart, at bubuksan ang bagong bersyon.",
     "updateInstallFailed": "Hindi ma-install ang update.",
     "updateNow": "I-update ngayon",
-    "updatingContainer": "Kinukuha ang bagong image at nagre-restart. Magre-reload ang page na ito kapag bumalik ang FreeLLMAPI.",
+    "updatingContainer": "Kinukuha ang bagong image at nagre-restart. Magre-reload ang page na ito kapag bumalik ang FreeTier Router.",
     "updateNowFailed": "Hindi tinanggap ng updater ang request. Tingnan kung tumatakbo ang watchtower container.",
-    "updateNowTimeout": "Hindi pa nagre-restart ang FreeLLMAPI pagkalipas ng 5 minuto. Tingnan ang logs ng watchtower container."
+    "updateNowTimeout": "Hindi pa nagre-restart ang FreeTier Router pagkalipas ng 5 minuto. Tingnan ang logs ng watchtower container."
   },
   "models": {
     "title": "Mga Modelo",
@@ -194,7 +194,7 @@
     "monthlyTokenBudget": "Buwanang badyet ng token",
     "remaining": "natitirang",
     "used": "ginamit",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -1215,7 +1215,7 @@
   "update": {
     "available": "New version available",
     "dismiss": "Dismiss",
-    "newBuild": "May mas bagong bersyon ng FreeLLMAPI na naka-install.",
+    "newBuild": "May mas bagong bersyon ng FreeTier Router na naka-install.",
     "reload": "I-reload"
   },
   "freeTier": {

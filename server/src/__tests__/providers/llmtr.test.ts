@@ -3,7 +3,7 @@ import type { ChatCompletionChunk } from '@freellmapi/shared/types.js';
 import { LlmtrProvider } from '../../providers/llmtr.js';
 import { getProvider } from '../../providers/index.js';
 import { AUTH_JSON_PROVIDER_MAP, detectPlatform, parseKeysFromFile } from '../../lib/key-parser.js';
-import { BUILTIN_DISCOVERY_PLATFORMS } from '../../services/builtin-model-discovery.js';
+import { policyCanAccept } from '../../services/free-policy.js';
 
 const model = 'qwen/qwen3.8-27b-free';
 const completion = { id: 'llmtr-test', object: 'chat.completion', created: 1, model,
@@ -28,7 +28,7 @@ describe('LLMTR provider', () => {
     expect(detectPlatform('LLMTR_')).toBe('llmtr');
     expect(AUTH_JSON_PROVIDER_MAP.llmtr).toBe('llmtr');
     expect(parseKeysFromFile('LLMTR_API_KEY=llmtr-test-not-a-real-key', 'keys.env').keys[0].platform).toBe('llmtr');
-    expect(BUILTIN_DISCOVERY_PLATFORMS).not.toContain('llmtr');
+    expect(policyCanAccept('llmtr')).toBe(false); // freetier-router: no automatic discovery
   });
 
   it('preserves auth, exact model, options, usage and routing attribution', async () => {

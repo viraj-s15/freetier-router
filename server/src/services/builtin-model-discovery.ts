@@ -1,70 +1,81 @@
 import type { Db } from '../db/types.js';
 import type { Scheduler } from '../lib/scheduler.js';
 import type { Platform } from '@freellmapi/shared/types.js';
-import { getProvider } from '../providers/index.js';
+import { getAllProviders, getProvider } from '../providers/index.js';
+import type { BaseProvider } from '../providers/base.js';
 import { OpenAICompatProvider } from '../providers/openai-compat.js';
 import { decrypt } from '../lib/crypto.js';
 import { decryptProxyUrl } from '../lib/key-proxy.js';
 import { withKeyProxy } from '../lib/proxy.js';
 import { discoverProviderModels, type DiscoveredModel } from './model-discovery.js';
-import { appliedCatalogPlatforms, DISCOVERED_MODEL_SOURCE } from './catalog-sync.js';
-import { clearCatalogModelTombstone, isCatalogModelTombstoned } from './model-state.js';
+import { catalogRuledOutPlatforms, DISCOVERED_MODEL_SOURCE } from './catalog-sync.js';
+import { blocksAutomaticDiscovery, clearCatalogModelTombstone } from './model-state.js';
 import { customModelSeed } from './custom-model-seed.js';
 import { ensureModelInProfiles } from './profile-models.js';
-import { customModelSyncFreePatterns, customModelSyncIntervalMs } from './custom-model-sync.js';
+import { customModelSyncFreePatterns } from './custom-model-sync.js';
+import { acceptsModel, patternMatches, policyCanAccept } from './free-policy.js';
 
-// ── Model discovery for built-in providers the catalog does not carry (#1348) ──
+// ── Model discovery for built-in providers (#1348, widened by freetier-router) ──
 //
-// Some registered OpenAI-compatible providers have NO rows in the signed
-// catalog, so a healthy key for them served nothing and the dashboard had no
-// way to fill the gap. This asks the provider's own /models (through the
-// registered adapter, with the operator's own key) and registers what it
-// serves, the same way custom-endpoint discovery (#488) does.
+// The free catalog reaches free installs 30 days after a model launches, while
+// each provider's own /models lists it on day zero. This asks every built-in
+// provider that can list its models (through the registered adapter, with the
+// operator's own key) and registers what its free policy allows, the same way
+// custom-endpoint discovery (#488) does.
 //
-// The signed, audited catalog stays authoritative:
-//  - Only an explicit allowlist of platforms is eligible. The rule behind the
-//    list is "zero rows in the signed catalog on every tier". A free install
-//    cannot see the Premium (live) catalog, so it cannot tell a provider the
-//    catalog has never carried from one still inside its 30-day Premium window
-//    (radeon, routeway) or one the audit keeps switched off with disabled rows
-//    (reka, navy, opencode, orcarouter, xfyun). Discovering those would hand
-//    free installs models the catalog gates or has ruled out, so the list is
-//    decided here, in the binary, not inferred at runtime.
-//  - Even an allowlisted platform stops being eligible the moment the applied
-//    catalog manages it (any row, or a managedPlatforms entry), or the local
-//    DB holds catalog-owned rows for it (the bundled baseline before the first
-//    sync). catalog-sync then adopts or retires the discovered rows.
+// The signed, audited catalog still outranks discovery:
+//  - A platform the applied catalog rules out (it carries chat rows for the
+//    platform and disables every one) is not eligible.
+//  - Which discovered models an automatic pass may add is decided per
+//    provider in free-policy.ts. A provider with no entry gets none.
 //  - Rows are written with models.source = 'discovered', never 'user': a
 //    'user' row outranks the catalog on a collision, a discovered row never
-//    does. Writes are INSERT-only: an existing row (catalog, user or an earlier
-//    discovery the operator has since tuned) is never touched.
-//  - Deleting a discovered model records a catalog tombstone (they count as
-//    catalog-managed, see isCatalogManagedModel), and every automatic pass
-//    honors it. Only an explicit pick in the dashboard lifts it.
+//    does. catalog-sync adopts a discovered row once the catalog lists it, and
+//    leaves every other discovered row alone. Writes are INSERT-only: an
+//    existing row (catalog, user or an earlier discovery the operator has
+//    since tuned) is never touched.
+//  - An automatic pass skips a model the operator deleted and a model the
+//    catalog removed (both are tombstones). Only an explicit pick in the
+//    dashboard lifts them.
 
-/** Built-in platforms eligible for discovery. Each is OpenAI-compatible and has
- *  zero rows, enabled or disabled, in the signed live catalog (checked against
- *  2026.09.27). Remove a platform here in the same change that adds it to the
- *  catalog; managedPlatforms in the catalog covers binaries already shipped. */
-export const BUILTIN_DISCOVERY_PLATFORMS: readonly Platform[] = ['longcat', 'siliconflow'];
+/** Starting limits for a discovered row until the catalog adopts it. A NULL
+ *  limit escapes pre-throttling, and these sit at the low end of documented
+ *  free tiers, so a new model can't set off a 429 storm. */
+export const DISCOVERED_RPM_LIMIT = 10;
+export const DISCOVERED_RPD_LIMIT = 250;
 
-/** `BUILTIN_MODEL_DISCOVERY`: 'manual' (default) keeps only the dashboard's
- *  Fetch models action, so nothing is registered without the operator picking
- *  it; 'auto' also discovers on key save, after a healthy check and on the
- *  custom-model sync cadence; 'off' disables both. Manual is the default
- *  because these providers bill funded accounts (SiliconFlow, LongCat) and
- *  label paid models inconsistently, so an automatic pass could route traffic
- *  to models that cost money. */
+const DEFAULT_DISCOVERY_INTERVAL_MS = 6 * 60 * 60 * 1000;
+
+/** `BUILTIN_MODEL_DISCOVERY`: 'auto' (default) discovers on key save, after a
+ *  healthy check and on its own schedule; 'manual' keeps only the dashboard's
+ *  Fetch models action; 'off' disables both. Auto is safe as the default
+ *  because the free policy, not the mode, decides what gets added. */
 export type BuiltinDiscoveryMode = 'auto' | 'manual' | 'off';
 
 export function builtinDiscoveryMode(): BuiltinDiscoveryMode {
   const raw = process.env.BUILTIN_MODEL_DISCOVERY?.trim().toLowerCase();
-  if (raw === 'auto' || raw === 'off') return raw;
+  if (raw === 'manual' || raw === 'off') return raw;
   if (raw === '0' || raw === 'false' || raw === 'disabled') return 'off';
-  return 'manual';
+  return 'auto';
 }
 
-export type IneligibleReason = 'disabled' | 'not_allowlisted' | 'not_openai_compatible' | 'catalog_managed';
+/** Interval in ms from `BUILTIN_MODEL_DISCOVERY_INTERVAL_MS`; 0 disables the
+ *  scheduled pass, and anything unset or malformed falls back to 6 hours. */
+export function builtinDiscoveryIntervalMs(): number {
+  const raw = process.env.BUILTIN_MODEL_DISCOVERY_INTERVAL_MS;
+  if (raw === undefined || raw.trim() === '') return DEFAULT_DISCOVERY_INTERVAL_MS;
+  const ms = Number(raw);
+  return Number.isFinite(ms) && ms >= 0 ? ms : DEFAULT_DISCOVERY_INTERVAL_MS;
+}
+
+/** The adapter that can list this provider's models, when it can. Google and
+ *  other native adapters get a branch here (and in discoverBuiltinModels) when
+ *  they gain a lister; the discovery loop stays as it is. */
+export function modelLister(provider: BaseProvider | undefined): OpenAICompatProvider | undefined {
+  return provider instanceof OpenAICompatProvider ? provider : undefined;
+}
+
+export type IneligibleReason = 'disabled' | 'not_openai_compatible' | 'catalog_ruled_out';
 
 export interface DiscoveryEligibility {
   eligible: boolean;
@@ -76,15 +87,18 @@ export interface DiscoveryEligibility {
 /** Whether `platform` may fill its model list from its own /models. */
 export function builtinDiscoveryEligibility(db: Db, platform: string): DiscoveryEligibility {
   if (builtinDiscoveryMode() === 'off') return { eligible: false, reason: 'disabled' };
-  if (!(BUILTIN_DISCOVERY_PLATFORMS as readonly string[]).includes(platform)) {
-    return { eligible: false, reason: 'not_allowlisted' };
-  }
-  const provider = getProvider(platform as Platform);
-  if (!(provider instanceof OpenAICompatProvider)) return { eligible: false, reason: 'not_openai_compatible' };
-  if (appliedCatalogPlatforms(db).has(platform) || hasCatalogOwnedRows(db, platform)) {
-    return { eligible: false, reason: 'catalog_managed' };
-  }
+  if (platform === 'custom') return { eligible: false, reason: 'not_openai_compatible' };
+  const provider = modelLister(getProvider(platform as Platform));
+  if (!provider) return { eligible: false, reason: 'not_openai_compatible' };
+  if (catalogRuledOutPlatforms(db).has(platform)) return { eligible: false, reason: 'catalog_ruled_out' };
   return { eligible: true, provider };
+}
+
+/** Every built-in platform with a model lister, in registry order. */
+export function builtinDiscoveryPlatforms(): string[] {
+  return getAllProviders()
+    .filter(p => p.platform !== 'custom' && modelLister(p) !== undefined)
+    .map(p => p.platform);
 }
 
 export function isBuiltinDiscoveryEligible(db: Db, platform: string): boolean {
@@ -96,23 +110,11 @@ export function ineligibleMessage(platform: string, reason: IneligibleReason | u
   switch (reason) {
     case 'disabled':
       return 'Model discovery for built-in providers is turned off (BUILTIN_MODEL_DISCOVERY=off).';
-    case 'catalog_managed':
-      return `${platform} models come from the catalog, so they cannot be fetched from the provider.`;
+    case 'catalog_ruled_out':
+      return `The catalog disables every ${platform} model, so ${platform} models are not fetched from the provider.`;
     default:
-      return `${platform} models come from the catalog, not from the provider's model list.`;
+      return `${platform} can't list its models, so its models come from the catalog only.`;
   }
-}
-
-// Catalog-owned rows for this platform in the local DB: chat rows the catalog
-// (or the bundled baseline) wrote, or any embedding / media row, which only
-// the catalog and the bundled baseline write for a built-in platform.
-function hasCatalogOwnedRows(db: Db, platform: string): boolean {
-  const row = db.prepare(`
-    SELECT (SELECT COUNT(*) FROM models           WHERE platform = ? AND source = 'catalog')
-         + (SELECT COUNT(*) FROM embedding_models WHERE platform = ?)
-         + (SELECT COUNT(*) FROM media_models     WHERE platform = ?) AS c
-  `).get(platform, platform, platform) as { c: number };
-  return row.c > 0;
 }
 
 interface KeyRow {
@@ -182,7 +184,7 @@ export function registerDiscoveredModels(
          rpm_limit, rpd_limit, tpm_limit, tpd_limit, monthly_token_budget, context_window, enabled, key_id,
          supports_tools, supports_vision, source, endpoint_scope)
       VALUES (@platform, @modelId, @modelId, @intelligenceRank, @speedRank, @sizeLabel,
-         NULL, NULL, NULL, NULL, '', @contextWindow, 1, NULL,
+         @rpmLimit, @rpdLimit, NULL, NULL, '', @contextWindow, 1, NULL,
          1, @vision, @source, '')
       ON CONFLICT(platform, model_id, endpoint_scope) DO NOTHING
     `);
@@ -196,7 +198,7 @@ export function registerDiscoveredModels(
         result.existing.push(entry.modelId);
         continue;
       }
-      if (isCatalogModelTombstoned(db, 'chat', platform, entry.modelId)) {
+      if (blocksAutomaticDiscovery(db, 'chat', platform, entry.modelId)) {
         if (!options.explicit) {
           result.tombstoned.push(entry.modelId);
           continue;
@@ -209,6 +211,8 @@ export function registerDiscoveredModels(
         intelligenceRank: seed.intelligenceRank,
         speedRank: seed.speedRank,
         sizeLabel: seed.sizeLabel,
+        rpmLimit: DISCOVERED_RPM_LIMIT,
+        rpdLimit: DISCOVERED_RPD_LIMIT,
         contextWindow: entry.contextWindow ?? null,
         vision: entry.vision ? 1 : 0,
         source: DISCOVERED_MODEL_SOURCE,
@@ -224,28 +228,25 @@ export function registerDiscoveredModels(
   })();
 }
 
-/** Glob match where `*` matches any run of chars (incl. empty). */
-function patternMatches(pattern: string, id: string): boolean {
-  const escaped = pattern.split('*').map(seg => seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  return new RegExp(`^${escaped.join('.*')}$`).test(id);
-}
-
 /**
- * Which discovered models an AUTOMATIC pass may register. Stricter than a
- * dashboard pick, because nobody looked at the list:
+ * Which discovered models an AUTOMATIC pass may register for `platform`.
+ * Stricter than a dashboard pick, because nobody looked at the list:
  *  - chat only: embedding, image, audio, transcription and video ids are
  *    skipped (#1051), as in the custom-model sync;
- *  - an upstream that prices a model and says it is not free is skipped;
- *  - CUSTOM_MODEL_SYNC_FREE_PATTERNS, when set, applies here too (#746).
+ *  - the platform's free policy (free-policy.ts) must accept the model;
+ *  - CUSTOM_MODEL_SYNC_FREE_PATTERNS, when set, narrows every policy (#746).
  */
-export function autoRegistrable(models: DiscoveredModel[]): { accepted: DiscoveredModel[]; nonChat: number; paid: number } {
+export function autoRegistrable(
+  platform: string,
+  models: DiscoveredModel[],
+): { accepted: DiscoveredModel[]; nonChat: number; paid: number } {
   const freePatterns = customModelSyncFreePatterns();
   const accepted: DiscoveredModel[] = [];
   let nonChat = 0;
   let paid = 0;
   for (const model of models) {
     if (model.kind !== undefined) { nonChat += 1; continue; }
-    if (model.priceNote !== undefined && model.isFree !== true) { paid += 1; continue; }
+    if (!acceptsModel(platform, model)) { paid += 1; continue; }
     if (freePatterns.length > 0 && !freePatterns.some(p => patternMatches(p, model.id))) { paid += 1; continue; }
     accepted.push(model);
   }
@@ -282,10 +283,13 @@ export async function runBuiltinModelDiscovery(db: Db, only?: string): Promise<B
   };
   if (builtinDiscoveryMode() !== 'auto') return result;
 
-  const platforms = only ? [only] : [...BUILTIN_DISCOVERY_PLATFORMS];
+  const platforms = only ? [only] : builtinDiscoveryPlatforms();
   for (const platform of platforms) {
     const eligibility = builtinDiscoveryEligibility(db, platform);
     if (!eligibility.eligible || !eligibility.provider) continue;
+    // Nothing could pass the policy, so don't spend a /models call (some
+    // catalog-only gateways meter it) on a list that would all be dropped.
+    if (!policyCanAccept(platform)) continue;
     const keys = usableKeys(db, platform);
     if (keys.length === 0) continue;
     result.platforms += 1;
@@ -294,7 +298,7 @@ export async function runBuiltinModelDiscovery(db: Db, only?: string): Promise<B
       // Re-check after the network round-trip: a catalog sync may have landed
       // in between, and the catalog always wins.
       if (!isBuiltinDiscoveryEligible(db, platform)) continue;
-      const { accepted, nonChat, paid } = autoRegistrable(discovered);
+      const { accepted, nonChat, paid } = autoRegistrable(platform, discovered);
       result.nonChatSkipped += nonChat;
       result.paidSkipped += paid;
       const registered = registerDiscoveredModels(
@@ -332,7 +336,14 @@ export function triggerBuiltinModelDiscovery(
   reason: 'key_added' | 'healthy',
 ): Promise<BuiltinDiscoveryResult> | null {
   if (builtinDiscoveryMode() !== 'auto') return null;
-  if (!isBuiltinDiscoveryEligible(db, platform)) return null;
+  // Callers (the health check, key save) fire and forget: a failure here must
+  // never change their own result, so the synchronous checks can't throw out.
+  try {
+    if (!policyCanAccept(platform) || !isBuiltinDiscoveryEligible(db, platform)) return null;
+  } catch (err: unknown) {
+    console.error(`[builtin-model-discovery] ${platform}: ${(err as Error)?.message ?? err}`);
+    return null;
+  }
   const pending = inFlight.get(platform);
   if (pending) return pending;
   if (reason === 'healthy') {
@@ -358,10 +369,12 @@ export function resetBuiltinDiscoveryThrottle(): void {
   lastEventRunMs.clear();
 }
 
-/** Run the pass on the custom-model sync cadence (CUSTOM_MODEL_SYNC_INTERVAL_MS,
- *  daily by default; 0 disables both). */
+/** Run the pass on its own cadence (BUILTIN_MODEL_DISCOVERY_INTERVAL_MS, every
+ *  6 hours by default; 0 disables the scheduled pass). On a platform that
+ *  already has models the event trigger stays quiet, so this is what finds a
+ *  new model there. */
 export function startBuiltinModelDiscovery(db: Db, scheduler: Scheduler): (() => void) | null {
-  const intervalMs = customModelSyncIntervalMs();
+  const intervalMs = builtinDiscoveryIntervalMs();
   if (intervalMs <= 0 || builtinDiscoveryMode() !== 'auto') return null;
   return scheduler.every(intervalMs, () => { void runBuiltinModelDiscovery(db); }, { name: 'builtin-model-discovery' });
 }

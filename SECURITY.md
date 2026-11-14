@@ -1,6 +1,6 @@
 # Security Policy
 
-FreeLLMAPI holds real credentials: your provider API keys (encrypted at rest in
+FreeTier Router (a fork of FreeLLMAPI) holds real credentials: your provider API keys (encrypted at rest in
 SQLite), a unified `/v1` bearer token, and a dashboard account. Bugs that expose
 any of those are taken seriously. Thanks for reporting them responsibly.
 
@@ -19,12 +19,12 @@ re-pull `:latest`).
 ## Reporting a vulnerability
 
 **Preferred:** GitHub private vulnerability reporting — go to the
-[Security tab](https://github.com/tashfeenahmed/freellmapi/security) and click
+[Security tab](https://github.com/viraj-s15/freetier-router/security) and click
 **Report a vulnerability**. That opens a private thread with the maintainer and
 keeps the details out of public issues.
 
-**Alternate:** email **support@freellmapi.co** with `[freellmapi security]` in the
-subject.
+If the bug is also in upstream FreeLLMAPI code, report it upstream too, through the
+[upstream Security tab](https://github.com/tashfeenahmed/freellmapi/security).
 
 Please do not open a public issue, PR, or discussion for a security bug until a
 fix is out.

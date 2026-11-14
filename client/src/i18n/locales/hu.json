@@ -60,7 +60,7 @@
     "emailChanged": "Az e-mail-cím módosult.",
     "passwordReset": "A jelszó visszaállt. Jelentkezzen be.",
     "resetCodeDockerHint": "Docker alatt fut? A kód a konténer naplójában található: docker logs <container>.",
-    "desktopSessionFailed": "Az irányítópult nem tudott bejelentkezni a helyi szerverre. Lépjen ki a FreeLLMAPI alkalmazásból, és nyissa meg újra."
+    "desktopSessionFailed": "Az irányítópult nem tudott bejelentkezni a helyi szerverre. Lépjen ki a FreeTier Router alkalmazásból, és nyissa meg újra."
   },
   "common": {
     "save": "Mentés",
@@ -110,7 +110,7 @@
     "sectionPreview": "Előnézet",
     "generalDescription": "A vezérlőpult nyelve és megjelenése.",
     "startAtLogin": "Indítás rendszerindításkor",
-    "startAtLoginHelp": "Automatikusan indítsa el a FreeLLMAPI-t, amikor bejelentkezik a számítógépére.",
+    "startAtLoginHelp": "Automatikusan indítsa el a FreeTier Router-t, amikor bejelentkezik a számítógépére.",
     "advancedDescription": "A tömörítési folyamat küszöbértékei és biztonsági kapcsolói.",
     "compressionTitle": "Prompt-tömörítés",
     "compressionDescription": "Csökkenti a kérés méretét az útválasztás előtt, megőrizve a kódot, a hibákat, az elérési utakat, a számokat és az eszközdefiníciókat.",
@@ -162,16 +162,16 @@
     "notGitInstall": "Ez a telepítés nem tartalmaz commitinformációkat.",
     "checkFailed": "Nem sikerült ellenőrizni a frissítéseket.",
     "autoUpdateCheck": "Automatikus frissítésellenőrzés",
-    "restartAfterUpdate": "A build befejezése után indítsa újra a FreeLLMAPI-t.",
+    "restartAfterUpdate": "A build befejezése után indítsa újra a FreeTier Router-t.",
     "downloadUpdate": "Frissítés letöltése",
     "downloadingUpdate": "Letöltés… {percent}%",
     "restartToUpdate": "Újraindítás a frissítéshez",
-    "updateReadyHint": "Letöltve. A FreeLLMAPI biztonsági mentést készít az adatairól, újraindul, és megnyitja az új verziót.",
+    "updateReadyHint": "Letöltve. A FreeTier Router biztonsági mentést készít az adatairól, újraindul, és megnyitja az új verziót.",
     "updateInstallFailed": "A frissítést nem sikerült telepíteni.",
     "updateNow": "Frissítés most",
-    "updatingContainer": "Az új image letöltése és újraindítás. Az oldal újratöltődik, amikor a FreeLLMAPI visszatér.",
+    "updatingContainer": "Az új image letöltése és újraindítás. Az oldal újratöltődik, amikor a FreeTier Router visszatér.",
     "updateNowFailed": "A frissítő nem fogadta el a kérést. Ellenőrizze, hogy fut-e a watchtower konténer.",
-    "updateNowTimeout": "A FreeLLMAPI 5 perc után sem indult újra. Nézze meg a watchtower konténer naplóit."
+    "updateNowTimeout": "A FreeTier Router 5 perc után sem indult újra. Nézze meg a watchtower konténer naplóit."
   },
   "models": {
     "title": "Modellek",
@@ -194,7 +194,7 @@
     "monthlyTokenBudget": "Havi token költségvetés",
     "remaining": "Maradék",
     "used": "Használt",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -1215,7 +1215,7 @@
   "update": {
     "available": "New version available",
     "dismiss": "Dismiss",
-    "newBuild": "A FreeLLMAPI újabb verziója van telepítve.",
+    "newBuild": "A FreeTier Router újabb verziója van telepítve.",
     "reload": "Újratöltés"
   },
   "freeTier": {

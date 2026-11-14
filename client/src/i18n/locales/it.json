@@ -60,7 +60,7 @@
     "emailChanged": "Email modificata con successo.",
     "passwordReset": "Password reimpostata con successo. Accedi di nuovo.",
     "resetCodeDockerHint": "Usi Docker? Il codice è nel log del container: docker logs <container>.",
-    "desktopSessionFailed": "La dashboard non è riuscita ad accedere al server locale. Chiudi FreeLLMAPI e riaprilo."
+    "desktopSessionFailed": "La dashboard non è riuscita ad accedere al server locale. Chiudi FreeTier Router e riaprilo."
   },
   "common": {
     "save": "Salva",
@@ -110,7 +110,7 @@
     "sectionPreview": "Anteprima",
     "generalDescription": "Lingua e aspetto di questa dashboard.",
     "startAtLogin": "Avvia all'avvio del sistema",
-    "startAtLoginHelp": "Avvia FreeLLMAPI automaticamente quando accedi al computer.",
+    "startAtLoginHelp": "Avvia FreeTier Router automaticamente quando accedi al computer.",
     "advancedDescription": "Soglie e interruttori di sicurezza della pipeline di compressione.",
     "compressionTitle": "Compressione dei prompt",
     "compressionDescription": "Riduci la dimensione delle richieste prima del routing preservando codice, errori, percorsi, numeri e definizioni degli strumenti.",
@@ -162,16 +162,16 @@
     "notGitInstall": "Questa installazione non include informazioni sui commit.",
     "checkFailed": "Impossibile verificare la disponibilità di aggiornamenti.",
     "autoUpdateCheck": "Controllo automatico degli aggiornamenti",
-    "restartAfterUpdate": "Riavvia FreeLLMAPI al termine della build.",
+    "restartAfterUpdate": "Riavvia FreeTier Router al termine della build.",
     "downloadUpdate": "Scarica aggiornamento",
     "downloadingUpdate": "Download in corso… {percent}%",
     "restartToUpdate": "Riavvia per aggiornare",
-    "updateReadyHint": "Scaricato. FreeLLMAPI esegue il backup dei tuoi dati, si riavvia e apre la nuova versione.",
+    "updateReadyHint": "Scaricato. FreeTier Router esegue il backup dei tuoi dati, si riavvia e apre la nuova versione.",
     "updateInstallFailed": "Impossibile installare l’aggiornamento.",
     "updateNow": "Aggiorna ora",
-    "updatingContainer": "Download della nuova immagine e riavvio in corso. La pagina si ricarica quando FreeLLMAPI torna disponibile.",
+    "updatingContainer": "Download della nuova immagine e riavvio in corso. La pagina si ricarica quando FreeTier Router torna disponibile.",
     "updateNowFailed": "Il servizio di aggiornamento non ha accettato la richiesta. Verifica che il container watchtower sia in esecuzione.",
-    "updateNowTimeout": "FreeLLMAPI non si è riavviato dopo 5 minuti. Controlla i log del container watchtower."
+    "updateNowTimeout": "FreeTier Router non si è riavviato dopo 5 minuti. Controlla i log del container watchtower."
   },
   "models": {
     "title": "Modelli",
@@ -194,7 +194,7 @@
     "monthlyTokenBudget": "Budget mensile di token",
     "remaining": "rimanenti",
     "used": "usati",
-    "usedScopeHint": "Solo richieste di chat, dall'inizio di questo mese solare, sommate su tutti i modelli della catena attiva, endpoint personalizzati inclusi. Il traffico inviato a un provider al di fuori di FreeLLMAPI non viene conteggiato.",
+    "usedScopeHint": "Solo richieste di chat, dall'inizio di questo mese solare, sommate su tutti i modelli della catena attiva, endpoint personalizzati inclusi. Il traffico inviato a un provider al di fuori di FreeTier Router non viene conteggiato.",
     "legendRemainingTitle": "Residuo / budget mensile di {name} ({platform})",
     "noPublishedQuota": "+{count} senza quota pubblicata",
     "noPublishedQuotaTitle": "Questi modelli non hanno un budget mensile di token documentato, quindi non c'è un residuo da mostrare.",
@@ -1215,7 +1215,7 @@
   "update": {
     "available": "New version available",
     "dismiss": "Dismiss",
-    "newBuild": "È installata una versione più recente di FreeLLMAPI.",
+    "newBuild": "È installata una versione più recente di FreeTier Router.",
     "reload": "Ricarica"
   },
   "freeTier": {

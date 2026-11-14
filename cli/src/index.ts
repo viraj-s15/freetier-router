@@ -241,7 +241,7 @@ export function resolvePinnedModel(
   // to be told which roster the verdict below came from.
   if (rosters.degradedReason) {
     warn(
-      `freellmapi: could not fetch the unfiltered model catalog (${rosters.degradedReason}). `
+      `freetier-router: could not fetch the unfiltered model catalog (${rosters.degradedReason}). `
       + `Checking '${requested}' against the available-only roster instead — a model that `
       + 'exists but is out of quota may be reported as unknown.\n',
     );
@@ -253,7 +253,7 @@ export function resolvePinnedModel(
   // we should make silently.
   if (resolved.unavailable) {
     warn(
-      `freellmapi: '${resolved.id}' is registered but not currently available `
+      `freetier-router: '${resolved.id}' is registered but not currently available `
       + '(out of quota, cooling down, or its key is disabled). Launching anyway.\n',
     );
   }
@@ -265,7 +265,7 @@ function help(): string {
     'FreeLLMAPI coding-agent setup and provider key management',
     '',
     'Usage:',
-    '  freellmapi <command> [--url URL] [--api-key KEY] [--profile NAME] [--model ID] [--dry-run]',
+    '  freetier-router <command> [--url URL] [--api-key KEY] [--profile NAME] [--model ID] [--dry-run]',
     '',
     'Commands:',
     ...tools.map(tool => `  ${tool.command.padEnd(17)} ${tool.name}`),
@@ -373,7 +373,7 @@ export function claudeLaunchEnv(
     if (!fs.existsSync(directory)) {
       throw new Error(
         `Claude profile '${options.profile}' has no configuration directory at ${directory}. `
-        + `Create it with: freellmapi setup-claude --profile ${options.profile}`,
+        + `Create it with: freetier-router setup-claude --profile ${options.profile}`,
       );
     }
     env.CLAUDE_CONFIG_DIR = directory;
@@ -514,19 +514,19 @@ export function unsupportedNodeVersion(
 ): string | null {
   if (!version || !Number.isFinite(major)) return null; // Non-Node runtimes: don't guess.
   if (major >= 20) return null;
-  return `freellmapi requires Node.js 20 or newer (found ${version}). Install one from https://nodejs.org and re-run.`;
+  return `freetier-router requires Node.js 20 or newer (found ${version}). Install one from https://nodejs.org and re-run.`;
 }
 
 if (isDirectExecution()) {
   const unsupported = unsupportedNodeVersion();
   if (unsupported) {
-    process.stderr.write(`freellmapi: ${unsupported}\n`);
+    process.stderr.write(`freetier-router: ${unsupported}\n`);
     process.exitCode = 1;
   } else {
     main().then(
       code => { process.exitCode = code; },
       error => {
-        process.stderr.write(`freellmapi: ${error instanceof Error ? error.message : String(error)}\n`);
+        process.stderr.write(`freetier-router: ${error instanceof Error ? error.message : String(error)}\n`);
         process.exitCode = 1;
       },
     );

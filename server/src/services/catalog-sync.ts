@@ -15,6 +15,9 @@ import {
   deleteTombstonedCatalogModels,
   isCatalogModelTombstoned,
   reinstateUpstreamRetiredCatalogModel,
+  getCatalogModelTombstone,
+  recordCatalogModelTombstone,
+  clearCatalogModelTombstone,
 } from './model-state.js';
 import { ensureAllModelsInProfiles } from './profile-models.js';
 
@@ -454,28 +457,53 @@ function catalogPlatforms(catalog: Catalog): Set<string> {
   return platforms;
 }
 
-let appliedPlatformsCache: { raw: string; platforms: Set<string> } | null = null;
+/** Platforms whose chat rows in this document are all disabled: the audit has
+ *  judged the whole provider not free (opencode, reka, ...). */
+function ruledOutPlatforms(catalog: Catalog): Set<string> {
+  const anyEnabled = new Map<string, boolean>();
+  for (const m of catalog.models) {
+    if (m.modality !== undefined && m.modality !== 'text') continue;
+    anyEnabled.set(m.platform, (anyEnabled.get(m.platform) ?? false) || m.enabled);
+  }
+  return new Set([...anyEnabled].filter(([, enabled]) => !enabled).map(([platform]) => platform));
+}
+
+interface AppliedPlatformSets { platforms: Set<string>; ruledOut: Set<string> }
+
+let appliedPlatformsCache: { raw: string; sets: AppliedPlatformSets } | null = null;
+
+function appliedPlatformSets(db: Db): AppliedPlatformSets {
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(SETTING_APPLIED_JSON) as { value: string } | undefined;
+  const raw = row?.value ?? '';
+  if (appliedPlatformsCache && appliedPlatformsCache.raw === raw) return appliedPlatformsCache.sets;
+  let sets: AppliedPlatformSets = { platforms: new Set(), ruledOut: new Set() };
+  if (raw) {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (isCatalog(parsed)) sets = { platforms: catalogPlatforms(parsed), ruledOut: ruledOutPlatforms(parsed) };
+    } catch { /* an unreadable cache manages nothing and rules nothing out */ }
+  }
+  appliedPlatformsCache = { raw, sets };
+  return sets;
+}
 
 /**
  * Platforms the catalog applied on this install manages (see catalogPlatforms),
  * read from the cached verified document. Empty when no catalog has been
- * applied yet. Built-in model discovery treats every platform in here as off
- * limits, so the audited catalog, not an upstream /models list, decides what
- * those providers serve.
+ * applied yet.
  */
 export function appliedCatalogPlatforms(db: Db): Set<string> {
-  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(SETTING_APPLIED_JSON) as { value: string } | undefined;
-  const raw = row?.value ?? '';
-  if (appliedPlatformsCache && appliedPlatformsCache.raw === raw) return appliedPlatformsCache.platforms;
-  let platforms = new Set<string>();
-  if (raw) {
-    try {
-      const parsed: unknown = JSON.parse(raw);
-      if (isCatalog(parsed)) platforms = catalogPlatforms(parsed);
-    } catch { /* an unreadable cache manages nothing; the DB checks still apply */ }
-  }
-  appliedPlatformsCache = { raw, platforms };
-  return platforms;
+  return appliedPlatformSets(db).platforms;
+}
+
+/**
+ * Platforms the applied catalog rules out for built-in model discovery: it
+ * carries chat rows for them and disables every one. Read from the verified
+ * document, not from models.enabled, which also holds the operator's own
+ * disables.
+ */
+export function catalogRuledOutPlatforms(db: Db): Set<string> {
+  return appliedPlatformSets(db).ruledOut;
 }
 
 export function applyCatalog(db: Db, catalog: Catalog): NonNullable<SyncResult['counts']> {
@@ -626,6 +654,9 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
         continue;
       }
       if (isCatalogModelTombstoned(db, 'chat', m.platform, m.modelId)) continue;
+      if (getCatalogModelTombstone(db, 'chat', m.platform, m.modelId)?.source === 'catalog_removed') {
+        clearCatalogModelTombstone(db, 'chat', m.platform, m.modelId);
+      }
       // A model auto-retired from a 410/end-of-life response (#634) is disabled,
       // not deleted. A catalog that STILL lists it — and lists it enabled — is
       // newer evidence than that one provider response, so lift the retirement.
@@ -894,27 +925,20 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
       if (!inCatalog.has(`${c.platform}:${c.model_id}`)) {
         deleteFb.run(c.id);
         deleteModel.run(c.id);
+        // The provider's /models often still lists a model the catalog dropped
+        // for leaving its free tier, so built-in discovery must not add it back.
+        // An operator deletion already says more and stays as it is.
+        if (!isCatalogModelTombstoned(db, 'chat', c.platform, c.model_id)) {
+          recordCatalogModelTombstone(db, 'chat', c.platform, c.model_id, { source: 'catalog_removed' });
+        }
         counts.removed++;
       }
     }
 
-    // #1348: retire discovered rows on every platform the catalog now
-    // manages. A platform counts as managed when this catalog carries ANY row
-    // for it (chat, media, embedding, STT or video; enabled or disabled, since
-    // a disabled row is still an audit verdict) or names it in
-    // managedPlatforms. Rows the catalog listed were adopted above and are
-    // source='catalog' by now, so what is left is exactly the discovered
-    // stopgap the catalog has superseded.
-    const managed = catalogPlatforms(catalog);
-    const discoveredRows = db
-      .prepare('SELECT id, platform FROM models WHERE source = ?')
-      .all(DISCOVERED_MODEL_SOURCE) as { id: number; platform: string }[];
-    for (const d of discoveredRows) {
-      if (!managed.has(d.platform)) continue;
-      deleteFb.run(d.id);
-      deleteModel.run(d.id);
-      counts.removed++;
-    }
+    // Discovered rows the catalog does not list stay: on a free install the
+    // catalog reaches a new model weeks after the provider lists it, and
+    // deleting the row here would undo discovery until then. Listed ones were
+    // adopted above and are catalog rows by now.
 
     // #1516: sweep rows pinned to keys that no longer exist. The DELETE-key
     // cascade in routes/keys.ts removes these at delete time; this is the

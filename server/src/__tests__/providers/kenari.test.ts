@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { KenariProvider } from '../../providers/kenari.js';
 import { initDb, getDb } from '../../db/index.js';
 import { getProvider } from '../../providers/index.js';
-import { isBuiltinDiscoveryEligible } from '../../services/builtin-model-discovery.js';
+import { policyCanAccept } from '../../services/free-policy.js';
 
 const model = 'qwen3-8-omni-flash:free';
 const json = (body: unknown, status = 200, headers = {}) => new Response(JSON.stringify(body), { status, headers });
@@ -22,7 +22,7 @@ describe('Kenari provider', () => {
   it('is registered without bundled models or free-tier discovery bypass', () => {
     expect(getProvider('kenari')).toBeInstanceOf(KenariProvider);
     expect(getDb().prepare("SELECT COUNT(*) n FROM models WHERE platform='kenari'").get()).toEqual({ n: 0 });
-    expect(isBuiltinDiscoveryEligible(getDb(), 'kenari')).toBe(false);
+    expect(policyCanAccept('kenari')).toBe(false); // freetier-router: no automatic discovery
   });
   it('validates a zero balance through the authenticated account endpoint, not public models', async () => {
     const fetch = vi.spyOn(global, 'fetch').mockResolvedValue(json({ object: 'account.balance', available_micro_idr: 0 }));

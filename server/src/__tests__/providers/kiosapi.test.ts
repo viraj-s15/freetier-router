@@ -3,7 +3,7 @@ import { KiosAPIProvider } from '../../providers/kiosapi.js';
 import { initDb, getDb } from '../../db/index.js';
 import { getProvider } from '../../providers/index.js';
 import { detectPlatform } from '../../lib/key-parser.js';
-import { isBuiltinDiscoveryEligible } from '../../services/builtin-model-discovery.js';
+import { policyCanAccept } from '../../services/free-policy.js';
 
 const routes = [
   ['meta/llama-3.1-8b', '@cf/meta/llama-3.1-8b-instruct-fp8'],
@@ -28,7 +28,7 @@ describe('KiosAPI free routes', () => {
   it('registers without seeding or discovery and imports named keys', () => {
     expect(getProvider('kiosapi')).toBeInstanceOf(KiosAPIProvider);
     expect(getDb().prepare("SELECT COUNT(*) n FROM models WHERE platform='kiosapi'").get()).toEqual({ n: 0 });
-    expect(isBuiltinDiscoveryEligible(getDb(), 'kiosapi')).toBe(false);
+    expect(policyCanAccept('kiosapi')).toBe(false); // freetier-router: no automatic discovery
     expect(detectPlatform('KIOSAPI_')).toBe('kiosapi');
   });
   it('does not burn quota or mistake the public roster for credential validation', async () => {

@@ -4,7 +4,7 @@ import { GizmoProvider } from '../../providers/gizmo.js';
 import { BlockRunProvider } from '../../providers/blockrun.js';
 import { getProvider } from '../../providers/index.js';
 import { AUTH_JSON_PROVIDER_MAP, parseKeysFromFile } from '../../lib/key-parser.js';
-import { BUILTIN_DISCOVERY_PLATFORMS } from '../../services/builtin-model-discovery.js';
+import { policyCanAccept } from '../../services/free-policy.js';
 import { extendedBodyParams, platformDropsResponseFormat } from '../../lib/sampling-params.js';
 
 const messages: ChatMessage[] = [{ role: 'user', content: 'Say OK' }];
@@ -27,7 +27,7 @@ describe.each([
     expect(getProvider(platform)).toBeInstanceOf(Provider);
     expect(AUTH_JSON_PROVIDER_MAP[platform]).toBe(platform);
     expect(parseKeysFromFile(`${platform.toUpperCase()}_API_KEY=test-not-a-real-key`, 'keys.env').keys[0].platform).toBe(platform);
-    expect(BUILTIN_DISCOVERY_PLATFORMS).not.toContain(platform);
+    expect(policyCanAccept(platform)).toBe(false); // freetier-router: no automatic discovery
   });
 
   it('preserves auth, exact model, usage and attribution', async () => {

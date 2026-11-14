@@ -156,7 +156,16 @@ export function isCatalogManagedModel(row: { platform: string; key_id?: number |
 //                   so the dashboard can show "retired upstream" instead of
 //                   silently losing the model, and so a later catalog that
 //                   still lists it can lift the retirement.
-export type CatalogTombstoneSource = 'user' | 'upstream_eol';
+//   'catalog_removed' — a catalog apply pruned the row because the catalog
+//                   dropped it (freetier-router). Automatic discovery must not
+//                   add it back from the provider's /models, which often still
+//                   lists a model whose free tier ended; a catalog that lists
+//                   it again, or a pick in the dashboard, clears it.
+export type CatalogTombstoneSource = 'user' | 'upstream_eol' | 'catalog_removed';
+
+function tombstoneSourceOf(raw: string): CatalogTombstoneSource {
+  return raw === 'upstream_eol' || raw === 'catalog_removed' ? raw : 'user';
+}
 
 export interface CatalogModelTombstone {
   source: CatalogTombstoneSource;
@@ -175,7 +184,7 @@ export function getCatalogModelTombstone(
     .get(kind, platform, modelId) as { source: string; reason: string | null; created_at: string } | undefined;
   if (!row) return undefined;
   return {
-    source: row.source === 'upstream_eol' ? 'upstream_eol' : 'user',
+    source: tombstoneSourceOf(row.source),
     reason: row.reason ?? null,
     createdAt: row.created_at,
   };
@@ -194,6 +203,19 @@ export function isCatalogModelTombstoned(
   modelId: string,
 ): boolean {
   return getCatalogModelTombstone(db, kind, platform, modelId)?.source === 'user';
+}
+
+/** True when an automatic discovery pass must skip this model: the operator
+ *  deleted it, or the catalog removed it. An upstream retirement keeps its row,
+ *  so discovery never reaches it as a new model anyway. */
+export function blocksAutomaticDiscovery(
+  db: Db,
+  kind: CatalogModelKind,
+  platform: string,
+  modelId: string,
+): boolean {
+  const source = getCatalogModelTombstone(db, kind, platform, modelId)?.source;
+  return source === 'user' || source === 'catalog_removed';
 }
 
 export function recordCatalogModelTombstone(
