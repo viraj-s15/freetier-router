@@ -5,6 +5,7 @@ import { registerCustomModels, type CustomModelEntry } from './custom-model-regi
 import { isCustomModelTombstoned } from './custom-model-tombstone.js';
 import { listCustomEndpoints } from './custom-endpoint.js';
 import { endpointScopeForBaseUrl } from '../lib/endpoint-scope.js';
+import { patternMatches } from './free-policy.js';
 
 // ── Scheduled custom-model sync (#674/#663/#656) ─────────────────────────────
 //
@@ -44,12 +45,6 @@ export function customModelSyncFreePatterns(): string[] {
   const raw = process.env.CUSTOM_MODEL_SYNC_FREE_PATTERNS;
   if (raw === undefined || raw.trim() === '') return [];
   return raw.split(',').map(p => p.trim()).filter(p => p.length > 0);
-}
-
-/** Glob match where `*` matches any run of chars (incl. empty). */
-function patternMatches(pattern: string, id: string): boolean {
-  const escaped = pattern.split('*').map(seg => seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  return new RegExp(`^${escaped.join('.*')}$`).test(id);
 }
 
 export interface CustomModelSyncResult {

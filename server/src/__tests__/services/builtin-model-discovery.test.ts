@@ -1,30 +1,42 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { getDb, initDb } from '../../db/index.js';
 import { encrypt } from '../../lib/crypto.js';
+import type { Scheduler } from '../../lib/scheduler.js';
 import {
   builtinDiscoveryMode,
-  BUILTIN_DISCOVERY_PLATFORMS,
+  builtinDiscoveryIntervalMs,
+  builtinDiscoveryPlatforms,
+  DISCOVERED_RPD_LIMIT,
+  DISCOVERED_RPM_LIMIT,
   autoRegistrable,
   builtinDiscoveryEligibility,
   registerDiscoveredModels,
   resetBuiltinDiscoveryThrottle,
   runBuiltinModelDiscovery,
+  startBuiltinModelDiscovery,
   triggerBuiltinModelDiscovery,
 } from '../../services/builtin-model-discovery.js';
 import { applyCatalog } from '../../services/catalog-sync.js';
-import { recordCatalogModelTombstone, isCatalogManagedModel } from '../../services/model-state.js';
+import { recordCatalogModelTombstone, isCatalogManagedModel, getCatalogModelTombstone } from '../../services/model-state.js';
 
-// #1348: built-in OpenAI-compatible providers the signed catalog carries no
-// models for fill their list from their own /models. These tests pin the
-// eligibility rules (allowlist, catalog-managed, Premium-gated), the
-// precedence of catalog and user rows over discovered ones, and how the
-// catalog adopts and retires discovered rows later.
+// Built-in model discovery (#1348, widened by freetier-router): every built-in
+// provider with an OpenAI-compatible /models is eligible unless the applied
+// catalog rules it out, and the provider's free policy decides what an
+// automatic pass adds. These tests pin eligibility, the schedule, the default
+// limits, tombstones, and how catalog sync adopts and keeps discovered rows.
 
 type AnyCatalog = Parameters<typeof applyCatalog>[1];
 
 const realFetch = globalThis.fetch;
 const ORIGINAL_MODE = process.env.BUILTIN_MODEL_DISCOVERY;
 const ORIGINAL_PATTERNS = process.env.CUSTOM_MODEL_SYNC_FREE_PATTERNS;
+const ORIGINAL_INTERVAL = process.env.BUILTIN_MODEL_DISCOVERY_INTERVAL_MS;
+const ORIGINAL_CUSTOM_INTERVAL = process.env.CUSTOM_MODEL_SYNC_INTERVAL_MS;
+
+function restoreEnv(name: string, value: string | undefined): void {
+  if (value === undefined) delete process.env[name];
+  else process.env[name] = value;
+}
 
 function catalogModel(platform: string, modelId: string, enabled = true): AnyCatalog['models'][number] {
   return {
@@ -47,7 +59,7 @@ function catalogOf(models: AnyCatalog['models'], extra: Partial<AnyCatalog> = {}
   return { version: '2099.01.01', generatedAt: new Date().toISOString(), tier: 'monthly', models, quirks: [], ...extra };
 }
 
-/** Pretend `catalog` was the last one applied (what appliedCatalogPlatforms reads). */
+/** Pretend `catalog` was the last one applied (what the eligibility check reads). */
 function cacheAppliedCatalog(catalog: AnyCatalog): void {
   getDb().prepare(`
     INSERT INTO settings (key, value) VALUES ('catalog_applied_json', ?)
@@ -73,17 +85,35 @@ function stubModels(ids: Array<string | Record<string, unknown>>) {
   return mock;
 }
 
-function rows(platform: string) {
-  return getDb().prepare(
-    'SELECT id, model_id, source, display_name, enabled, key_id FROM models WHERE platform = ? ORDER BY model_id',
-  ).all(platform) as Array<{ id: number; model_id: string; source: string; display_name: string; enabled: number; key_id: number | null }>;
+function rows(platform: string, source?: string) {
+  const all = getDb().prepare(
+    `SELECT id, model_id, source, display_name, enabled, key_id, rpm_limit, rpd_limit, tpm_limit, tpd_limit
+       FROM models WHERE platform = ? ORDER BY model_id`,
+  ).all(platform) as Array<{
+    id: number; model_id: string; source: string; display_name: string; enabled: number; key_id: number | null;
+    rpm_limit: number | null; rpd_limit: number | null; tpm_limit: number | null; tpd_limit: number | null;
+  }>;
+  return source === undefined ? all : all.filter(r => r.source === source);
 }
 
-describe('built-in model discovery (#1348)', () => {
+/** Every catalog row the bundled baseline wrote, so an apply exercises only the rows under test. */
+function baselineCatalogRows(): AnyCatalog['models'] {
+  return (getDb().prepare("SELECT platform, model_id FROM models WHERE source = 'catalog'").all() as Array<{ platform: string; model_id: string }>)
+    .map(r => catalogModel(r.platform, r.model_id));
+}
+
+function fakeScheduler() {
+  const every = vi.fn((_ms: number, _fn: () => void | Promise<void>, _opts?: { name?: string }) => () => {});
+  return { scheduler: { every, after: vi.fn() } as unknown as Scheduler, every };
+}
+
+describe('built-in model discovery', () => {
   beforeEach(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
-    process.env.BUILTIN_MODEL_DISCOVERY = 'auto';
+    delete process.env.BUILTIN_MODEL_DISCOVERY;
     delete process.env.CUSTOM_MODEL_SYNC_FREE_PATTERNS;
+    delete process.env.BUILTIN_MODEL_DISCOVERY_INTERVAL_MS;
+    delete process.env.CUSTOM_MODEL_SYNC_INTERVAL_MS;
     initDb(':memory:');
     resetBuiltinDiscoveryThrottle();
   });
@@ -91,93 +121,164 @@ describe('built-in model discovery (#1348)', () => {
   afterEach(() => {
     globalThis.fetch = realFetch;
     vi.restoreAllMocks();
-    if (ORIGINAL_MODE === undefined) delete process.env.BUILTIN_MODEL_DISCOVERY;
-    else process.env.BUILTIN_MODEL_DISCOVERY = ORIGINAL_MODE;
-    if (ORIGINAL_PATTERNS === undefined) delete process.env.CUSTOM_MODEL_SYNC_FREE_PATTERNS;
-    else process.env.CUSTOM_MODEL_SYNC_FREE_PATTERNS = ORIGINAL_PATTERNS;
+    restoreEnv('BUILTIN_MODEL_DISCOVERY', ORIGINAL_MODE);
+    restoreEnv('CUSTOM_MODEL_SYNC_FREE_PATTERNS', ORIGINAL_PATTERNS);
+    restoreEnv('BUILTIN_MODEL_DISCOVERY_INTERVAL_MS', ORIGINAL_INTERVAL);
+    restoreEnv('CUSTOM_MODEL_SYNC_INTERVAL_MS', ORIGINAL_CUSTOM_INTERVAL);
   });
 
-  it('defaults to manual so nothing is registered without the operator picking it', () => {
-    delete process.env.BUILTIN_MODEL_DISCOVERY;
-    expect(builtinDiscoveryMode()).toBe('manual');
-    process.env.BUILTIN_MODEL_DISCOVERY = 'auto';
-    expect(builtinDiscoveryMode()).toBe('auto');
+  describe('mode', () => {
+    it('defaults to auto when unset', () => {
+      expect(builtinDiscoveryMode()).toBe('auto');
+    });
+
+    it('keeps manual and off', () => {
+      process.env.BUILTIN_MODEL_DISCOVERY = 'manual';
+      expect(builtinDiscoveryMode()).toBe('manual');
+      process.env.BUILTIN_MODEL_DISCOVERY = 'off';
+      expect(builtinDiscoveryMode()).toBe('off');
+      process.env.BUILTIN_MODEL_DISCOVERY = 'false';
+      expect(builtinDiscoveryMode()).toBe('off');
+    });
+  });
+
+  describe('schedule', () => {
+    it('runs every 6 hours by default', () => {
+      expect(builtinDiscoveryIntervalMs()).toBe(6 * 60 * 60 * 1000);
+      const { scheduler, every } = fakeScheduler();
+      expect(startBuiltinModelDiscovery(getDb(), scheduler)).not.toBeNull();
+      expect(every).toHaveBeenCalledWith(6 * 60 * 60 * 1000, expect.any(Function), { name: 'builtin-model-discovery' });
+    });
+
+    it('takes its interval from BUILTIN_MODEL_DISCOVERY_INTERVAL_MS and turns off at 0', () => {
+      process.env.BUILTIN_MODEL_DISCOVERY_INTERVAL_MS = '60000';
+      expect(builtinDiscoveryIntervalMs()).toBe(60000);
+      process.env.BUILTIN_MODEL_DISCOVERY_INTERVAL_MS = '0';
+      const { scheduler, every } = fakeScheduler();
+      expect(startBuiltinModelDiscovery(getDb(), scheduler)).toBeNull();
+      expect(every).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the default on a malformed value', () => {
+      process.env.BUILTIN_MODEL_DISCOVERY_INTERVAL_MS = 'soon';
+      expect(builtinDiscoveryIntervalMs()).toBe(6 * 60 * 60 * 1000);
+    });
+
+    it('does not depend on CUSTOM_MODEL_SYNC_INTERVAL_MS', () => {
+      process.env.CUSTOM_MODEL_SYNC_INTERVAL_MS = '0';
+      const { scheduler, every } = fakeScheduler();
+      expect(startBuiltinModelDiscovery(getDb(), scheduler)).not.toBeNull();
+      expect(every).toHaveBeenCalledWith(6 * 60 * 60 * 1000, expect.any(Function), expect.anything());
+    });
+
+    it('schedules nothing in manual mode', () => {
+      process.env.BUILTIN_MODEL_DISCOVERY = 'manual';
+      const { scheduler } = fakeScheduler();
+      expect(startBuiltinModelDiscovery(getDb(), scheduler)).toBeNull();
+    });
   });
 
   describe('eligibility', () => {
-    it('allows only the allowlisted platforms the catalog does not carry', () => {
-      const db = getDb();
-      expect(builtinDiscoveryEligibility(db, 'siliconflow').eligible).toBe(true);
-      expect(builtinDiscoveryEligibility(db, 'longcat').eligible).toBe(true);
-      // Catalog-managed providers are never discoverable, whatever their state.
-      expect(builtinDiscoveryEligibility(db, 'groq')).toMatchObject({ eligible: false, reason: 'not_allowlisted' });
-      expect(builtinDiscoveryEligibility(db, 'custom').eligible).toBe(false);
+    it('covers catalog-managed providers that can list their models', () => {
+      cacheAppliedCatalog(catalogOf([catalogModel('groq', 'llama-x')]));
+      expect(builtinDiscoveryEligibility(getDb(), 'groq')).toMatchObject({ eligible: true });
+      expect(builtinDiscoveryEligibility(getDb(), 'siliconflow').eligible).toBe(true);
     });
 
-    it('keeps Premium-window and audited-off providers out of the allowlist', () => {
-      // radeon/routeway ship enabled rows in the Premium catalog only (not yet
-      // aged into free); reka/navy/opencode/orcarouter/xfyun carry disabled
-      // rows the audit keeps off. A free install cannot see either, so the
-      // allowlist is what keeps discovery from bypassing the gate.
-      for (const gated of ['radeon', 'routeway', 'reka', 'navy', 'opencode', 'orcarouter', 'xfyun']) {
-        expect(BUILTIN_DISCOVERY_PLATFORMS).not.toContain(gated);
-        expect(builtinDiscoveryEligibility(getDb(), gated).eligible).toBe(false);
-      }
+    it('lists every OpenAI-compatible built-in platform, and not custom or native adapters', () => {
+      const platforms = builtinDiscoveryPlatforms();
+      expect(platforms).toEqual(expect.arrayContaining(['groq', 'mistral', 'openrouter', 'siliconflow', 'longcat']));
+      expect(platforms).not.toContain('custom');
+      expect(platforms).not.toContain('google');
+      expect(platforms).not.toContain('cohere');
+      expect(platforms).not.toContain('cloudflare');
     });
 
-    it('is off limits once the applied catalog lists the platform, even with a disabled row', () => {
-      cacheAppliedCatalog(catalogOf([catalogModel('siliconflow', 'Qwen/Qwen3-8B', false)]));
-      expect(builtinDiscoveryEligibility(getDb(), 'siliconflow')).toMatchObject({ eligible: false, reason: 'catalog_managed' });
-      expect(builtinDiscoveryEligibility(getDb(), 'longcat').eligible).toBe(true);
+    it('rejects a provider whose adapter cannot list models', () => {
+      expect(builtinDiscoveryEligibility(getDb(), 'google')).toMatchObject({ eligible: false, reason: 'not_openai_compatible' });
+      expect(builtinDiscoveryEligibility(getDb(), 'custom').eligible).toBe(false);
     });
 
-    it('honors a names-only managedPlatforms entry (Premium window, no rows in this tier)', () => {
+    it('rules out a provider whose catalog chat rows are all disabled', () => {
+      cacheAppliedCatalog(catalogOf([catalogModel('opencode', 'a', false), catalogModel('opencode', 'b', false)]));
+      expect(builtinDiscoveryEligibility(getDb(), 'opencode')).toMatchObject({ eligible: false, reason: 'catalog_ruled_out' });
+    });
+
+    it('keeps a provider eligible when at least one catalog row is enabled', () => {
+      cacheAppliedCatalog(catalogOf([catalogModel('requesty', 'a', false), catalogModel('requesty', 'b', true)]));
+      expect(builtinDiscoveryEligibility(getDb(), 'requesty').eligible).toBe(true);
+    });
+
+    it('ignores models the operator disabled locally', () => {
+      cacheAppliedCatalog(catalogOf([catalogModel('groq', 'llama-x')]));
+      getDb().prepare("UPDATE models SET enabled = 0 WHERE platform = 'groq'").run();
+      expect(builtinDiscoveryEligibility(getDb(), 'groq').eligible).toBe(true);
+    });
+
+    it('does not count a names-only managedPlatforms entry as a ruling', () => {
       cacheAppliedCatalog(catalogOf([], { managedPlatforms: ['longcat'] }));
-      expect(builtinDiscoveryEligibility(getDb(), 'longcat')).toMatchObject({ eligible: false, reason: 'catalog_managed' });
+      expect(builtinDiscoveryEligibility(getDb(), 'longcat').eligible).toBe(true);
     });
 
     it('can be switched off', () => {
       process.env.BUILTIN_MODEL_DISCOVERY = 'off';
-      expect(builtinDiscoveryEligibility(getDb(), 'siliconflow')).toMatchObject({ eligible: false, reason: 'disabled' });
+      expect(builtinDiscoveryEligibility(getDb(), 'groq')).toMatchObject({ eligible: false, reason: 'disabled' });
     });
   });
 
-  describe('registration precedence', () => {
-    it('writes discovered rows that route like catalog rows but are marked discovered', () => {
-      const result = registerDiscoveredModels(getDb(), 'siliconflow', [{ modelId: 'deepseek-ai/DeepSeek-V3', contextWindow: 65536 }], { explicit: false });
-      expect(result.created).toEqual(['deepseek-ai/DeepSeek-V3']);
-      const [row] = rows('siliconflow');
-      expect(row).toMatchObject({ model_id: 'deepseek-ai/DeepSeek-V3', source: 'discovered', enabled: 1, key_id: null });
-      expect(getDb().prepare('SELECT 1 FROM fallback_config WHERE model_db_id = ?').get(row!.id)).toBeTruthy();
-      // Deleting one records a catalog tombstone, the "stays deleted" contract.
-      expect(isCatalogManagedModel({ platform: 'siliconflow', key_id: null, source: 'discovered' })).toBe(true);
+  describe('registration', () => {
+    it('writes discovered rows with default limits at the end of the chain', () => {
+      const db = getDb();
+      const before = (db.prepare('SELECT COALESCE(MAX(priority), 0) AS m FROM fallback_config').get() as { m: number }).m;
+      const result = registerDiscoveredModels(db, 'groq', [{ modelId: 'brand-new', contextWindow: 65536 }], { explicit: false });
+      expect(result.created).toEqual(['brand-new']);
+      const [row] = rows('groq', 'discovered');
+      expect(row).toMatchObject({
+        model_id: 'brand-new', enabled: 1, key_id: null,
+        rpm_limit: DISCOVERED_RPM_LIMIT, rpd_limit: DISCOVERED_RPD_LIMIT, tpm_limit: null, tpd_limit: null,
+      });
+      expect(DISCOVERED_RPM_LIMIT).toBe(10);
+      expect(DISCOVERED_RPD_LIMIT).toBe(250);
+      const fb = db.prepare('SELECT priority FROM fallback_config WHERE model_db_id = ?').get(row!.id) as { priority: number };
+      expect(fb.priority).toBeGreaterThan(before);
+      expect(isCatalogManagedModel({ platform: 'groq', key_id: null, source: 'discovered' })).toBe(true);
     });
 
-    it('never overwrites an existing catalog or user row', () => {
+    it('never overwrites an existing row, from any source', () => {
       const db = getDb();
-      db.prepare(`INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, size_label, source)
-                  VALUES ('siliconflow', 'from-user', 'Mine', 1, 1, 'Large', 'user')`).run();
-      const result = registerDiscoveredModels(db, 'siliconflow', [{ modelId: 'from-user' }, { modelId: 'fresh' }], { explicit: true });
-      expect(result.existing).toEqual(['from-user']);
+      db.prepare(`INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, size_label, source, enabled)
+                  VALUES ('groq', 'from-catalog', 'Catalog', 1, 1, 'Large', 'catalog', 0)`).run();
+      const result = registerDiscoveredModels(db, 'groq', [{ modelId: 'from-catalog' }, { modelId: 'fresh' }], { explicit: false });
+      expect(result.existing).toEqual(['from-catalog']);
       expect(result.created).toEqual(['fresh']);
-      expect(rows('siliconflow').find(r => r.model_id === 'from-user')).toMatchObject({ source: 'user', display_name: 'Mine' });
+      expect(rows('groq').find(r => r.model_id === 'from-catalog')).toMatchObject({ source: 'catalog', enabled: 0, display_name: 'Catalog' });
     });
 
-    it('keeps a deleted model deleted on automatic passes; an explicit pick lifts it', () => {
+    it('skips an operator deletion on automatic passes; an explicit pick lifts it', () => {
       const db = getDb();
-      recordCatalogModelTombstone(db, 'chat', 'siliconflow', 'gone');
-      expect(registerDiscoveredModels(db, 'siliconflow', [{ modelId: 'gone' }], { explicit: false }).tombstoned).toEqual(['gone']);
-      expect(rows('siliconflow')).toEqual([]);
-      expect(registerDiscoveredModels(db, 'siliconflow', [{ modelId: 'gone' }], { explicit: true }).created).toEqual(['gone']);
+      recordCatalogModelTombstone(db, 'chat', 'groq', 'gone');
+      expect(registerDiscoveredModels(db, 'groq', [{ modelId: 'gone' }], { explicit: false }).tombstoned).toEqual(['gone']);
+      expect(rows('groq', 'discovered')).toEqual([]);
+      expect(registerDiscoveredModels(db, 'groq', [{ modelId: 'gone' }], { explicit: true }).created).toEqual(['gone']);
+      expect(getCatalogModelTombstone(db, 'chat', 'groq', 'gone')).toBeUndefined();
+    });
+
+    it('skips a model the catalog removed; an explicit pick adds it and clears the tombstone', () => {
+      const db = getDb();
+      recordCatalogModelTombstone(db, 'chat', 'groq', 'old-model', { source: 'catalog_removed' });
+      expect(registerDiscoveredModels(db, 'groq', [{ modelId: 'old-model' }], { explicit: false }).tombstoned).toEqual(['old-model']);
+      expect(rows('groq', 'discovered')).toEqual([]);
+      expect(registerDiscoveredModels(db, 'groq', [{ modelId: 'old-model' }], { explicit: true }).created).toEqual(['old-model']);
+      expect(getCatalogModelTombstone(db, 'chat', 'groq', 'old-model')).toBeUndefined();
     });
   });
 
   describe('automatic filtering', () => {
-    it('registers chat models only and skips models the upstream prices as paid', () => {
-      const { accepted, nonChat, paid } = autoRegistrable([
+    it('adds chat models a free-key provider lists, and skips non-chat and priced ones', () => {
+      const { accepted, nonChat, paid } = autoRegistrable('groq', [
         { id: 'chat-a', ownedBy: null },
         { id: 'text-embedding-3', ownedBy: null, kind: 'embedding' },
-        { id: 'black-forest-labs/FLUX.1-schnell', ownedBy: null, kind: 'image' },
+        { id: 'whisper-x', ownedBy: null, kind: 'transcription' },
         { id: 'paid-chat', ownedBy: null, priceNote: '$1/M in $2/M out', isFree: false },
         { id: 'free-chat', ownedBy: null, priceNote: 'free', isFree: true },
       ]);
@@ -186,99 +287,138 @@ describe('built-in model discovery (#1348)', () => {
       expect(paid).toBe(1);
     });
 
-    it('applies CUSTOM_MODEL_SYNC_FREE_PATTERNS when set', () => {
-      process.env.CUSTOM_MODEL_SYNC_FREE_PATTERNS = '*:free';
-      const { accepted } = autoRegistrable([{ id: 'a:free', ownedBy: null }, { id: 'b', ownedBy: null }]);
-      expect(accepted.map(m => m.id)).toEqual(['a:free']);
+    it('adds nothing for a provider with no free policy', () => {
+      const { accepted, paid } = autoRegistrable('siliconflow', [
+        { id: 'deepseek-ai/DeepSeek-V3', ownedBy: null },
+        { id: 'free-one', ownedBy: null, priceNote: 'free', isFree: true },
+      ]);
+      expect(accepted).toEqual([]);
+      expect(paid).toBe(2);
+    });
+
+    it('adds only priced-free models for a priced-listing provider', () => {
+      const { accepted } = autoRegistrable('openrouter', [
+        { id: 'vendor/a:free', ownedBy: null, priceNote: 'free', isFree: true },
+        { id: 'vendor/b:free', ownedBy: null },
+        { id: 'vendor/c', ownedBy: null, priceNote: '$1/M in', isFree: false },
+      ]);
+      expect(accepted.map(m => m.id)).toEqual(['vendor/a:free']);
+    });
+
+    it('lets CUSTOM_MODEL_SYNC_FREE_PATTERNS narrow every policy', () => {
+      process.env.CUSTOM_MODEL_SYNC_FREE_PATTERNS = 'llama-*';
+      const { accepted } = autoRegistrable('groq', [{ id: 'llama-4', ownedBy: null }, { id: 'qwen-3', ownedBy: null }]);
+      expect(accepted.map(m => m.id)).toEqual(['llama-4']);
     });
   });
 
   describe('runBuiltinModelDiscovery', () => {
-    it('fetches the registered base URL with the stored key and registers new chat models', async () => {
-      addKey('siliconflow', 'sk-silicon');
-      const mock = stubModels(['deepseek-ai/DeepSeek-V3', 'BAAI/bge-m3-embedding', 'Qwen/Qwen3-8B']);
+    it('reads a catalog-managed provider with the stored key and adds new models the policy accepts', async () => {
+      cacheAppliedCatalog(catalogOf([catalogModel('groq', 'llama-x')]));
+      addKey('groq', 'gsk-test');
+      const mock = stubModels(['brand-new-model', 'distil-whisper-large-v3-en', { id: 'paid-one', pricing: { prompt: '0.000001', completion: '0.000002' } }]);
 
       const result = await runBuiltinModelDiscovery(getDb());
 
-      expect(String(mock.mock.calls[0]![0])).toBe('https://api.siliconflow.com/v1/models');
+      expect(String(mock.mock.calls[0]![0])).toBe('https://api.groq.com/openai/v1/models');
       const init = mock.mock.calls[0]![1] as RequestInit;
-      expect((init.headers as Record<string, string>).Authorization).toBe('Bearer sk-silicon');
-      expect(result.added).toBe(2);
-      expect(result.nonChatSkipped).toBe(1);
-      expect(rows('siliconflow').map(r => r.model_id)).toEqual(['Qwen/Qwen3-8B', 'deepseek-ai/DeepSeek-V3']);
+      expect((init.headers as Record<string, string>).Authorization).toBe('Bearer gsk-test');
+      expect(rows('groq', 'discovered').map(r => r.model_id)).toEqual(['brand-new-model']);
+      expect(result.added).toBe(1);
+      expect(result.paidSkipped).toBe(1);
     });
 
     it('does nothing for a platform without a usable key, or in manual mode', async () => {
       const mock = stubModels(['x']);
       expect((await runBuiltinModelDiscovery(getDb())).platforms).toBe(0);
-      addKey('siliconflow');
+      addKey('groq', 'sk', 'invalid');
+      expect((await runBuiltinModelDiscovery(getDb())).platforms).toBe(0);
+      addKey('groq');
       process.env.BUILTIN_MODEL_DISCOVERY = 'manual';
       expect((await runBuiltinModelDiscovery(getDb())).platforms).toBe(0);
       expect(mock).not.toHaveBeenCalled();
     });
 
-    it('never touches a Premium-gated platform even with a healthy key', async () => {
-      addKey('routeway');
-      const mock = stubModels(['a:free']);
-      await runBuiltinModelDiscovery(getDb(), 'routeway');
-      expect(triggerBuiltinModelDiscovery(getDb(), 'routeway', 'key_added')).toBeNull();
+    it('never calls a provider whose free policy can accept nothing', async () => {
+      addKey('siliconflow');
+      const mock = stubModels(['deepseek-ai/DeepSeek-V3']);
+      expect((await runBuiltinModelDiscovery(getDb(), 'siliconflow')).platforms).toBe(0);
+      expect(triggerBuiltinModelDiscovery(getDb(), 'siliconflow', 'key_added')).toBeNull();
       expect(mock).not.toHaveBeenCalled();
-      expect(rows('routeway')).toEqual([]);
+    });
+
+    it('never calls a provider the catalog rules out', async () => {
+      cacheAppliedCatalog(catalogOf([catalogModel('opencode', 'a', false)]));
+      addKey('opencode');
+      const mock = stubModels(['a']);
+      await runBuiltinModelDiscovery(getDb(), 'opencode');
+      expect(triggerBuiltinModelDiscovery(getDb(), 'opencode', 'key_added')).toBeNull();
+      expect(mock).not.toHaveBeenCalled();
     });
 
     it('records upstream failures without throwing', async () => {
-      addKey('longcat');
+      addKey('groq');
       globalThis.fetch = vi.fn(async () => new Response('{"error":{"message":"bad key"}}', { status: 401 })) as any;
       const result = await runBuiltinModelDiscovery(getDb());
-      expect(result.failures).toEqual([{ platform: 'longcat', error: expect.stringContaining('rejected the key') }]);
+      expect(result.failures).toEqual([{ platform: 'groq', error: expect.stringContaining('rejected the key') }]);
     });
 
     it('the healthy-check trigger runs once for an empty platform and then stays quiet', async () => {
-      addKey('longcat');
-      const mock = stubModels(['LongCat-Flash-Chat']);
-      await triggerBuiltinModelDiscovery(getDb(), 'longcat', 'healthy');
-      expect(rows('longcat').map(r => r.model_id)).toEqual(['LongCat-Flash-Chat']);
-      expect(triggerBuiltinModelDiscovery(getDb(), 'longcat', 'healthy')).toBeNull();
+      addKey('sealion');
+      const mock = stubModels(['aisingapore/Qwen-SEA-LION-v4.5-27B-IT']);
+      await triggerBuiltinModelDiscovery(getDb(), 'sealion', 'healthy');
+      expect(rows('sealion', 'discovered').map(r => r.model_id)).toEqual(['aisingapore/Qwen-SEA-LION-v4.5-27B-IT']);
+      expect(triggerBuiltinModelDiscovery(getDb(), 'sealion', 'healthy')).toBeNull();
       expect(mock).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('catalog precedence on sync', () => {
-    function stripCatalogRows(): AnyCatalog['models'] {
-      // Keep every baseline catalog row so the apply only exercises the rows under test.
-      return (getDb().prepare("SELECT platform, model_id FROM models WHERE source = 'catalog'").all() as Array<{ platform: string; model_id: string }>)
-        .map(r => catalogModel(r.platform, r.model_id));
-    }
-
-    it('adopts a discovered row the catalog lists and retires the rest of that platform', () => {
+    it('adopts a discovered row the catalog lists and keeps the unlisted ones', () => {
       const db = getDb();
-      registerDiscoveredModels(db, 'siliconflow', [{ modelId: 'listed' }, { modelId: 'unlisted' }], { explicit: false });
-      registerDiscoveredModels(db, 'longcat', [{ modelId: 'untouched' }], { explicit: false });
-      const listedId = rows('siliconflow').find(r => r.model_id === 'listed')!.id;
+      registerDiscoveredModels(db, 'groq', [{ modelId: 'listed' }, { modelId: 'unlisted' }], { explicit: false });
+      const listedId = rows('groq').find(r => r.model_id === 'listed')!.id;
 
-      applyCatalog(db, catalogOf([...stripCatalogRows(), catalogModel('siliconflow', 'listed')]));
+      applyCatalog(db, catalogOf([...baselineCatalogRows(), catalogModel('groq', 'listed')]));
 
-      const silicon = rows('siliconflow');
-      expect(silicon).toEqual([
-        expect.objectContaining({ id: listedId, model_id: 'listed', source: 'catalog', display_name: 'listed (catalog)' }),
-      ]);
-      // A platform the catalog still does not manage keeps its discovered rows.
-      expect(rows('longcat')).toEqual([expect.objectContaining({ model_id: 'untouched', source: 'discovered' })]);
+      const groq = rows('groq');
+      expect(groq.find(r => r.model_id === 'listed')).toMatchObject({
+        id: listedId, source: 'catalog', display_name: 'listed (catalog)', rpm_limit: 30, rpd_limit: 1000,
+      });
+      expect(groq.find(r => r.model_id === 'unlisted')).toMatchObject({
+        source: 'discovered', rpm_limit: DISCOVERED_RPM_LIMIT, rpd_limit: DISCOVERED_RPD_LIMIT, enabled: 1,
+      });
     });
 
-    it('retires discovered rows when the catalog manages the platform by name only', () => {
+    it('keeps discovered rows when the catalog manages the platform by name only', () => {
       const db = getDb();
       registerDiscoveredModels(db, 'longcat', [{ modelId: 'a' }], { explicit: false });
-      applyCatalog(db, catalogOf(stripCatalogRows(), { managedPlatforms: ['longcat'] }));
-      expect(rows('longcat')).toEqual([]);
+      applyCatalog(db, catalogOf(baselineCatalogRows(), { managedPlatforms: ['longcat'] }));
+      expect(rows('longcat', 'discovered').map(r => r.model_id)).toEqual(['a']);
     });
 
     it('keeps a local disable when the catalog adopts a discovered row', () => {
       const db = getDb();
-      registerDiscoveredModels(db, 'siliconflow', [{ modelId: 'listed' }], { explicit: false });
-      db.prepare("UPDATE models SET enabled = 0 WHERE platform = 'siliconflow'").run();
-      applyCatalog(db, catalogOf([...stripCatalogRows(), catalogModel('siliconflow', 'listed')]));
-      expect(rows('siliconflow')[0]).toMatchObject({ source: 'catalog', enabled: 0 });
+      registerDiscoveredModels(db, 'groq', [{ modelId: 'listed' }], { explicit: false });
+      db.prepare("UPDATE models SET enabled = 0 WHERE platform = 'groq' AND model_id = 'listed'").run();
+      applyCatalog(db, catalogOf([...baselineCatalogRows(), catalogModel('groq', 'listed')]));
+      expect(rows('groq').find(r => r.model_id === 'listed')).toMatchObject({ source: 'catalog', enabled: 0 });
+    });
+
+    it('does not let discovery add back a model the catalog dropped', async () => {
+      const db = getDb();
+      const baseline = baselineCatalogRows();
+      registerDiscoveredModels(db, 'groq', [{ modelId: 'short-lived' }], { explicit: false });
+      applyCatalog(db, catalogOf([...baseline, catalogModel('groq', 'short-lived')]));
+      applyCatalog(db, catalogOf(baseline));
+      expect(rows('groq').find(r => r.model_id === 'short-lived')).toBeUndefined();
+      expect(getCatalogModelTombstone(db, 'chat', 'groq', 'short-lived')?.source).toBe('catalog_removed');
+
+      addKey('groq');
+      stubModels(['short-lived']);
+      const result = await runBuiltinModelDiscovery(db, 'groq');
+      expect(result.tombstoned).toBe(1);
+      expect(rows('groq').find(r => r.model_id === 'short-lived')).toBeUndefined();
     });
   });
 });

@@ -100,6 +100,14 @@ Replaces the old `size_label NOT IN ('User','Custom')` heuristic. Values:
 - `'catalog'` — created by catalog sync
 - `'user'` — declarative config, admin add, custom endpoint
 - `'declarative'` — from declarative config file
+- `'discovered'` — added by built-in model discovery from a provider's own `/models`
+
+### In FreeTier Router
+
+The fork changes two rules in this table:
+
+- A discovered row that the catalog doesn't list **stays**, on every platform, with its own limits (10 rpm, 250 rpd). Upstream deletes discovered rows once the catalog manages the platform. On a free install the catalog reaches a new model weeks after the provider lists it, so the delete would undo discovery until then. A listed discovered row is still adopted as a catalog row.
+- When the prune deletes a catalog row, it records a `catalog_removed` tombstone, unless an operator tombstone already exists. Automatic discovery skips a model with this tombstone, because a provider's `/models` often still lists a model whose free tier ended. A catalog that lists the model again clears the tombstone. A pick under Fetch models in the dashboard also clears it.
 
 ---
 

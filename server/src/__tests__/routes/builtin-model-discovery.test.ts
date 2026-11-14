@@ -6,7 +6,8 @@ import { resetBuiltinDiscoveryThrottle } from '../../services/builtin-model-disc
 import { mintDashboardToken, isGatedApiPath } from '../helpers/auth.js';
 
 // #1348: the dashboard's Fetch models action, extended from custom endpoints
-// to built-in providers the signed catalog carries no models for.
+// to built-in providers. freetier-router widens it to every built-in provider
+// that can list its models, unless the applied catalog rules it out.
 
 const DISCOVER = '/api/keys/custom/discover-models';
 const REGISTER = '/api/keys/discovered-models';
@@ -45,6 +46,22 @@ async function addKey(app: Express, platform: string, key = 'sk-test'): Promise<
   const { status, body } = await post(app, '/api/keys', { platform, key });
   expect(status).toBe(201);
   return body;
+}
+
+/** Pretend a catalog with these chat rows was the last one applied. */
+function cacheAppliedCatalog(models: Array<{ platform: string; modelId: string; enabled: boolean }>): void {
+  const catalog = {
+    version: '2099.01.01', generatedAt: new Date().toISOString(), tier: 'monthly', quirks: [],
+    models: models.map(m => ({
+      ...m, displayName: m.modelId, intelligenceRank: 10, speedRank: 5, sizeLabel: 'Large',
+      limits: { rpm: 30, rpd: 1000, tpm: null, tpd: null }, monthlyTokenBudget: '~1M', contextWindow: 131072,
+      supportsVision: false, supportsTools: true,
+    })),
+  };
+  getDb().prepare(`
+    INSERT INTO settings (key, value) VALUES ('catalog_applied_json', ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+  `).run(JSON.stringify(catalog));
 }
 
 function modelRows(platform: string) {
@@ -94,20 +111,31 @@ describe('built-in provider model discovery routes (#1348)', () => {
     expect(((mock.mock.calls[0]![1] as RequestInit).headers as Record<string, string>).Authorization).toBe('Bearer sk-silicon');
   });
 
-  it('refuses a catalog-managed built-in provider without calling it', async () => {
-    const key = await addKey(app, 'groq');
-    const mock = stubProvider(['llama']);
+  it('lists a catalog-managed built-in provider\'s models too', async () => {
+    const key = await addKey(app, 'groq', 'gsk-test');
+    const mock = stubProvider(['brand-new-model']);
+    const { status, body } = await post(app, DISCOVER, { keyId: key.id });
+    expect(status).toBe(200);
+    expect(body).toMatchObject({ platform: 'groq', baseUrl: 'https://api.groq.com/openai/v1', total: 1 });
+    expect(String(mock.mock.calls[0]![0])).toBe('https://api.groq.com/openai/v1/models');
+  });
+
+  it('refuses a provider the catalog rules out without calling it', async () => {
+    cacheAppliedCatalog([{ platform: 'opencode', modelId: 'a', enabled: false }]);
+    const key = await addKey(app, 'opencode');
+    const mock = stubProvider(['x']);
     const { status, body } = await post(app, DISCOVER, { keyId: key.id });
     expect(status).toBe(400);
-    expect(body.error.message).toMatch(/come from the catalog/);
+    expect(body.error.message).toMatch(/disables every opencode model/);
     expect(mock).not.toHaveBeenCalled();
   });
 
-  it('refuses a Premium-gated provider (catalog rows not yet free) without calling it', async () => {
-    const key = await addKey(app, 'radeon');
+  it('refuses a provider whose adapter cannot list models without calling it', async () => {
+    const key = await addKey(app, 'google');
     const mock = stubProvider(['x']);
-    const { status } = await post(app, DISCOVER, { keyId: key.id });
+    const { status, body } = await post(app, DISCOVER, { keyId: key.id });
     expect(status).toBe(400);
+    expect(body.error.message).toMatch(/can't list its models/);
     expect(mock).not.toHaveBeenCalled();
   });
 
@@ -127,32 +155,46 @@ describe('built-in provider model discovery routes (#1348)', () => {
   });
 
   it('refuses registration for ineligible and custom keys', async () => {
-    const groq = await addKey(app, 'groq');
-    expect((await post(app, REGISTER, { keyId: groq.id, models: ['x'] })).status).toBe(400);
+    cacheAppliedCatalog([{ platform: 'opencode', modelId: 'a', enabled: false }]);
+    const opencode = await addKey(app, 'opencode');
+    expect((await post(app, REGISTER, { keyId: opencode.id, models: ['x'] })).status).toBe(400);
     const custom = getDb().prepare(`
       INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled, base_url)
       VALUES ('custom', '', 'e', 'i', 't', 'healthy', 1, 'http://127.0.0.1:9/v1')
     `).run();
     expect((await post(app, REGISTER, { keyId: Number(custom.lastInsertRowid), models: ['x'] })).status).toBe(400);
-    expect(modelRows('groq').some(r => r.model_id === 'x')).toBe(false);
+    expect(modelRows('opencode').some(r => r.model_id === 'x')).toBe(false);
   });
 
   it('flags discoverable key rows for the dashboard', async () => {
     await addKey(app, 'siliconflow');
     await addKey(app, 'groq');
+    await addKey(app, 'google');
     const { body } = await request(app, 'GET', '/api/keys');
     const byPlatform = Object.fromEntries(body.map((k: any) => [k.platform, k.modelDiscovery]));
-    expect(byPlatform).toMatchObject({ siliconflow: true, groq: false });
+    expect(byPlatform).toMatchObject({ siliconflow: true, groq: true, google: false });
   });
 
   it('on key save, explains the discovery instead of the Premium advice and fetches in the background', async () => {
     process.env.BUILTIN_MODEL_DISCOVERY = 'auto';
+    getDb().prepare("DELETE FROM models WHERE platform = 'sealion'").run();
+    const mock = stubProvider(['aisingapore/Qwen-SEA-LION-v4.5-27B-IT']);
+    const key = await addKey(app, 'sealion');
+    expect(key.notice).toMatch(/being fetched from sealion's own model list/);
+    expect(key.notice).not.toMatch(/Premium/);
+    await vi.waitFor(() => expect(modelRows('sealion')).toEqual([{ model_id: 'aisingapore/Qwen-SEA-LION-v4.5-27B-IT', source: 'discovered' }]));
+    expect(String(mock.mock.calls[0]![0])).toMatch(/sea-lion\.ai\/v1\/models$/);
+  });
+
+  it('on key save, keeps the catalog notice and makes no call when the provider has no free policy', async () => {
+    process.env.BUILTIN_MODEL_DISCOVERY = 'auto';
     const mock = stubProvider(['LongCat-Flash-Chat']);
     const key = await addKey(app, 'longcat');
-    expect(key.notice).toMatch(/being fetched from longcat's own model list/);
-    expect(key.notice).not.toMatch(/Premium/);
-    await vi.waitFor(() => expect(modelRows('longcat')).toEqual([{ model_id: 'LongCat-Flash-Chat', source: 'discovered' }]));
-    expect(String(mock.mock.calls[0]![0])).toBe('https://api.longcat.chat/openai/v1/models');
+    expect(key.notice).toMatch(/catalog/);
+    expect(key.notice).not.toMatch(/being fetched/);
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(mock).not.toHaveBeenCalled();
+    expect(modelRows('longcat')).toEqual([]);
   });
 
   it('keeps the catalog notice for providers discovery does not cover', async () => {

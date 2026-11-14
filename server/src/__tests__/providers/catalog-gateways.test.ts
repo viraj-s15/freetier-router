@@ -6,7 +6,7 @@ import { getProvider } from '../../providers/index.js';
 import { AUTH_JSON_PROVIDER_MAP, parseKeysFromFile } from '../../lib/key-parser.js';
 import { inferPoolForPlatform } from '../../services/provider-quota.js';
 import { applyCatalog } from '../../services/catalog-sync.js';
-import { isBuiltinDiscoveryEligible } from '../../services/builtin-model-discovery.js';
+import { policyCanAccept } from '../../services/free-policy.js';
 import { getDb, initDb } from '../../db/index.js';
 
 const json = (body: unknown, status = 200, headers = {}) => new Response(JSON.stringify(body), { status, headers });
@@ -99,7 +99,7 @@ describe.each(configs)('$platform catalog-only adapter', config => {
   it('does not seed or discover models; only ingests tier-selected catalog rows', () => {
     const db = getDb();
     expect(db.prepare('SELECT COUNT(*) AS n FROM models WHERE platform=?').get(config.platform)).toEqual({ n: 0 });
-    expect(isBuiltinDiscoveryEligible(db, config.platform)).toBe(false);
+    expect(policyCanAccept(config.platform)).toBe(false); // freetier-router: no automatic discovery
     const result = applyCatalog(db, { version: '2099.01.01', generatedAt: new Date().toISOString(), tier: 'live', quirks: [], models: [{ platform: config.platform, modelId: config.model, displayName: 'Test model', intelligenceRank: 50, speedRank: 50, sizeLabel: '', limits: { rpm: null, rpd: null, tpm: null, tpd: null }, monthlyTokenBudget: 'Shared free allowance', contextWindow: 8192, enabled: true, supportsTools: false, supportsVision: false }] });
     expect(result.skippedUnknownPlatform).toBe(0);
     expect(db.prepare('SELECT model_id FROM models WHERE platform=?').all(config.platform)).toEqual([{ model_id: config.model }]);

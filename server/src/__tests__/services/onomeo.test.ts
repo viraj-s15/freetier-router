@@ -5,7 +5,7 @@ import { OnomeoProvider, ONOMEO_BASE_URL } from '../../providers/onomeo.js';
 import { AUTH_JSON_PROVIDER_MAP, parseKeysFromFile } from '../../lib/key-parser.js';
 import { inferPoolForPlatform } from '../../services/provider-quota.js';
 import { applyCatalog } from '../../services/catalog-sync.js';
-import { isBuiltinDiscoveryEligible } from '../../services/builtin-model-discovery.js';
+import { policyCanAccept } from '../../services/free-policy.js';
 
 const json = (body: unknown, status = 200, headers = {}) => new Response(JSON.stringify(body), { status, headers });
 const modelList = { object: 'list', data: [{ id: 'glm-5.3', object: 'model' }] };
@@ -163,7 +163,7 @@ describe('onomeo catalog gate', () => {
   it('does not seed or discover models; only ingests tier-selected catalog rows', () => {
     const db = getDb();
     expect(db.prepare('SELECT COUNT(*) AS n FROM models WHERE platform=?').get('onomeo')).toEqual({ n: 0 });
-    expect(isBuiltinDiscoveryEligible(db, 'onomeo')).toBe(false);
+    expect(policyCanAccept('onomeo')).toBe(false); // freetier-router: no automatic discovery
     const result = applyCatalog(db, { version: '2099.01.01', generatedAt: new Date().toISOString(), tier: 'live', quirks: [],
       models: [{ platform: 'onomeo', modelId: 'glm-5.3', displayName: 'GLM 5.3', intelligenceRank: 50, speedRank: 50, sizeLabel: '',
         limits: { rpm: null, rpd: null, tpm: null, tpd: null }, monthlyTokenBudget: '30 calls / 5 h, shared', contextWindow: 128000,

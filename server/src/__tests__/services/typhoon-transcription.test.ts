@@ -4,7 +4,7 @@ import { encrypt } from '../../lib/crypto.js';
 import { runTranscription, TRANSCRIPTION_PLATFORMS } from '../../services/media.js';
 import { clearCooldownsForKey, isOnCooldown } from '../../services/ratelimit.js';
 import { applyCatalog } from '../../services/catalog-sync.js';
-import { isBuiltinDiscoveryEligible } from '../../services/builtin-model-discovery.js';
+import { policyCanAccept } from '../../services/free-policy.js';
 
 const models = ['typhoon-asr-realtime', 'typhoon-isan-asr-realtime'];
 const audio = Buffer.from('RIFFfakewavbytes');
@@ -33,7 +33,7 @@ describe('Typhoon transcription and catalog integration', () => {
     expect(TRANSCRIPTION_PLATFORMS.has('typhoon')).toBe(true);
     expect(db.prepare("SELECT COUNT(*) AS n FROM models WHERE platform='typhoon'").get()).toEqual({ n: 0 });
     expect(db.prepare("SELECT COUNT(*) AS n FROM media_models WHERE platform='typhoon'").get()).toEqual({ n: 0 });
-    expect(isBuiltinDiscoveryEligible(db, 'typhoon')).toBe(false);
+    expect(policyCanAccept('typhoon')).toBe(false); // freetier-router: no automatic discovery
   });
 
   it.each(models)('posts multipart file/model and normalizes %s', async model => {

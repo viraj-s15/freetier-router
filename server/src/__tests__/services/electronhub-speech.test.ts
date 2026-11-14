@@ -3,7 +3,7 @@ import { initDb, getDb } from '../../db/index.js';
 import { encrypt } from '../../lib/crypto.js';
 import { MEDIA_PLATFORMS, runSpeech } from '../../services/media.js';
 import { applyCatalog } from '../../services/catalog-sync.js';
-import { isBuiltinDiscoveryEligible } from '../../services/builtin-model-discovery.js';
+import { policyCanAccept } from '../../services/free-policy.js';
 
 const models = ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts', 'humain-tts'];
 const wav = Buffer.alloc(48);
@@ -67,7 +67,7 @@ describe('ElectronHub speech and Plugsky catalog integration', () => {
     const db = getDb();
     expect(MEDIA_PLATFORMS.has('electronhub')).toBe(true);
     expect(db.prepare("SELECT COUNT(*) AS n FROM models WHERE platform='plugsky'").get()).toEqual({ n: 0 });
-    expect(isBuiltinDiscoveryEligible(db, 'plugsky')).toBe(false);
+    expect(policyCanAccept('plugsky')).toBe(false); // freetier-router: no automatic discovery
     const row = (platform: string, modelId: string) => ({ platform, modelId, displayName: modelId, intelligenceRank: 50, speedRank: 50, sizeLabel: '', limits: { rpm: null, rpd: null, tpm: null, tpd: null }, monthlyTokenBudget: 'Shared free quota', contextWindow: 131072, enabled: true, supportsVision: false, supportsTools: false });
     const counts = applyCatalog(db, {
       version: '2099.01.01', generatedAt: new Date().toISOString(), tier: 'live', quirks: [],
