@@ -32,6 +32,10 @@ The catalog still comes from `freellmapi.co`, twice a day, signed and verified. 
 
 Settings for discovery are in [`.env.example`](.env.example) under "Model discovery". The rest of this README comes from upstream and still describes the shared features. Where it names FreeLLMAPI, read FreeTier Router, except for the catalog service and the Premium feed.
 
+### Caveat: discovered models aren't checked by hand
+
+The catalog lists models that its maintainers test. Discovery adds every model that the provider lists and the free policy allows, and nobody tests these models first. A discovered model can fail to chat, can refuse your key, or can have rate limits other than the default of 10 a minute and 250 a day. If a model fails every time, turn it off on the **Models** page, so that `auto` doesn't spend time on it.
+
 ![Dashboard, Models page](repo-assets/github-hero.png)
 
 
@@ -178,6 +182,13 @@ node server/dist/index.js     # server and dashboard on http://localhost:3001
 ```
 
 With Docker, `docker compose up -d --build` builds the image from this checkout.
+
+Setup notes:
+
+- Run the server with the same Node major version that ran `npm ci`. The `better-sqlite3` native module is built for that version, and the server fails to start on another one. Node 25 and later aren't supported, so if your default `node` is newer, use Node 22, for example `/opt/homebrew/opt/node@22/bin/node server/dist/index.js` with Homebrew.
+- A source run doesn't start again after a reboot. To keep the router running, use Docker (the compose file restarts it), a launchd or systemd service, or a client that starts it when the connection is refused.
+- The first visit to the dashboard creates the admin account (email and password). A browser on the same machine needs nothing else. From another device, enter the first-run setup code that the server prints in its log. The `/api/*` admin routes need that login, and the `/v1` API needs the unified key.
+- Set your client's model to `auto` to let the router pick, or to a model id from `GET /v1/models` to pin one.
 
 Open http://localhost:3001, add your provider keys on the **Keys** page, reorder the **Fallback Chain** to taste, and copy your unified API key from the **Keys** page header. That unified key is what you point your OpenAI SDK at.
 
