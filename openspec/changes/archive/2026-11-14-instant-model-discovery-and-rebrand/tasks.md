@@ -42,5 +42,5 @@
 ## 6. Integration check
 
 - [x] 6.1 Run the full test suite, lint and build for server, client, CLI and desktop, and verify all pass or match the baseline from 1.1
-- [ ] 6.2 Start the server locally with one free key (for example `groq`), and verify in the logs that a discovery pass runs, that new models appear at the end of the chain with limits 10 and 250, and that a forced catalog sync keeps them
+- [x] 6.2 Start the server locally with one free key (for example `groq`), and verify in the logs that a discovery pass runs, that new models appear at the end of the chain with limits 10 and 250, and that a forced catalog sync keeps them
   - Partial run on 2026-11-14 with a dummy key: the real free catalog from freellmapi.co applied (513 new, 41 updated, 77 removed, 73 `catalog_removed` tombstones), saving a `groq` key started a pass that reached Groq's real `/models` and logged a clean 401, and a `longcat` key (no policy) made no call and kept the catalog notice. Still open: a run with a real free key, to see new models land with limits 10 and 250.
