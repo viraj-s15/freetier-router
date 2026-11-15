@@ -2,6 +2,8 @@
 
 # Install & deploy
 
+> FreeTier Router fork: these docs come from upstream FreeLLMAPI. Build from source with the steps in the [README Quick start](../../../README.md#quick-start), or let an agent do it with [AGENT-SETUP.md](../../../AGENT-SETUP.md). Where these docs name FreeLLMAPI, read FreeTier Router.
+
 [← Back to README](../README.md) · [Documentation index](../README.md)
 
 Everything about getting FreeLLMAPI running: the one-liner, Docker Compose, local development, declarative config, production builds, the desktop app, where your data lives, and how to reset a password, read the logs, or uninstall.

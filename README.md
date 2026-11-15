@@ -48,6 +48,7 @@ The catalog lists models that its maintainers test. Discovery adds every model t
 - [Compatible CLIs & coding agents](#compatible-clis--coding-agents)
 - [How it compares](#how-it-compares)
 - [Features](#features)
+- [Set it up with an agent](#set-it-up-with-an-agent)
 - [Quick start](#quick-start)
 - [Desktop app](#desktop-app)
 - [Works with OpenAI-compatible clients](#works-with-openai-compatible-clients)
@@ -166,6 +167,14 @@ Based on public documentation, July 2026 — corrections welcome.
 - **Runs anywhere Node 20+ runs** — Windows, macOS, Linux servers, or a small ARM SBC (Raspberry Pi included). ~40 MB RSS at idle behind PM2 / systemd / whatever supervisor you prefer.
 
 The scope is deliberately narrow — see [what's not supported yet](docs/en/architecture/00-high-level-index.md#not-yet-supported).
+
+## Set it up with an agent
+
+[AGENT-SETUP.md](AGENT-SETUP.md) has steps for a coding agent, such as Claude Code, Codex or Cursor. The agent installs, builds and starts the router, creates the dashboard login and saves the unified key. You only add your provider keys in the dashboard. Tell your agent:
+
+```text
+Set up FreeTier Router by following AGENT-SETUP.md in https://github.com/viraj-s15/freetier-router.
+```
 
 ## Quick start
 
