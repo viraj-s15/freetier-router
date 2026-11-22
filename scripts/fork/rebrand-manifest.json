@@ -9,7 +9,6 @@
   "README.md": [
     "# FreeTier Router",
     "FreeTier Router is an unofficial fork of [FreeLLMAPI](https://github.com/tashfeenahmed/freellmapi) by Tashfeen Ahmed, under the same MIT license. It aggregates free tiers from dozens of providers behind one OpenAI-compatible `/v1` endpoint, stores keys encrypted, routes each request to the best available model, and falls over to the next provider when one is rate-limited.",
-    "Settings for discovery are in [`.env.example`](.env.example) under \"Model discovery\". The rest of this README comes from upstream and still describes the shared features. Where it names FreeLLMAPI, read FreeTier Router, except for the catalog service and the Premium feed.",
     "npx freetier-router setup-claude --url http://localhost:3001 --api-key <unified-key>",
     "Set up FreeTier Router by following AGENT-SETUP.md in https://github.com/viraj-s15/freetier-router.",
     "git clone https://github.com/viraj-s15/freetier-router.git",

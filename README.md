@@ -15,26 +15,19 @@ FreeTier Router is an unofficial fork of [FreeLLMAPI](https://github.com/tashfee
 
 ## What this fork changes
 
-Upstream free installs get new models from a signed catalog snapshot that is 30 days behind the live feed. This fork keeps that free catalog for hand-checked metadata, and adds the provider's own model list on top:
+Upstream FreeLLMAPI gets new models from a free catalog that runs 30 days behind. This fork also reads each provider's own model list, so a new free model shows up on the day the provider lists it.
 
-- Built-in model discovery is on by default (`BUILTIN_MODEL_DISCOVERY=auto`) for every built-in provider with an OpenAI-compatible `/models` endpoint. Upstream turns it on for two providers only.
-- A free policy for each provider (`server/src/services/free-policy.ts`) decides which listed models an automatic pass may add:
-  - `free-key`: `groq`, `mistral`, `sealion`. These keys can't be billed while the account has no payment method. **If you add a payment method to one of these accounts, set `BUILTIN_MODEL_DISCOVERY=manual`**, because discovery would then add models that can cost money.
-  - `priced-listing`: `openrouter`. Only models that `/models` prices at zero.
-  - `pattern`: `unorouter` (`*:free`) and `bazaarlink` (`auto:free`).
-  - Every other provider adds nothing automatically. You can still pick models under Fetch models on the key.
-- Free tiers have their own data terms. Mistral's free Experiment plan, for example, may use API requests for training unless you opt out in its Admin Console. Check each provider's terms before you send it private data.
-- A discovery pass runs every 6 hours (`BUILTIN_MODEL_DISCOVERY_INTERVAL_MS`) and when you save a key. A new model starts at the end of the fallback chain with limits of 10 requests per minute and 250 per day.
-- When the free catalog lists a discovered model, catalog sync adopts it and sets the real limits. Upstream deletes discovered models on any platform that the catalog manages, and the fork keeps them.
+- Discovery is on by default for every built-in provider. It runs every 6 hours and when you save a key.
+- A free policy for each provider decides what discovery can add, in [`free-policy.ts`](server/src/services/free-policy.ts). Groq, Mistral and SEA-LION add every model, and OpenRouter adds only the models it prices at zero.
+- UnoRouter and BazaarLink add only their free routes. Every other provider adds nothing on its own, but you can still pick models under Fetch models.
+- A new model starts at the end of the fallback chain, with limits of 10 requests a minute and 250 a day. When the catalog lists it, the router uses the catalog's limits.
 - When the catalog drops a model, discovery doesn't add it back.
 
-The catalog still comes from `freellmapi.co`, twice a day, signed and verified. This project has no connection to FreeLLMAPI or Neu Software LLC. Their Premium live feed still works with this fork if you buy it from them.
+If you add a payment method to a Groq, Mistral or SEA-LION account, set `BUILTIN_MODEL_DISCOVERY=manual`. Otherwise discovery can add models that cost money.
 
-Settings for discovery are in [`.env.example`](.env.example) under "Model discovery". The rest of this README comes from upstream and still describes the shared features. Where it names FreeLLMAPI, read FreeTier Router, except for the catalog service and the Premium feed.
+Nobody tests discovered models first, so some of them can fail. If a model fails every time, turn it off on the **Models** page, so `auto` doesn't waste time on it. Free tiers can also train on your requests, so check each provider's terms before you send private data.
 
-### Caveat: discovered models aren't checked by hand
-
-The catalog lists models that its maintainers test. Discovery adds every model that the provider lists and the free policy allows, and nobody tests these models first. A discovered model can fail to chat, can refuse your key, or can have rate limits other than the default of 10 a minute and 250 a day. If a model fails every time, turn it off on the **Models** page, so that `auto` doesn't spend time on it.
+The discovery settings are in [`.env.example`](.env.example) under "Model discovery". The rest of this README comes from upstream FreeLLMAPI, and this project has no connection to FreeLLMAPI or Neu Software LLC.
 
 ![Dashboard, Models page](repo-assets/github-hero.png)
 
