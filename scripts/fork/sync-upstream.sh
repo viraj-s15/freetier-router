@@ -157,7 +157,8 @@ fi
 
 # ── 4. Move main to the checked merge ──
 step "Moving main to $BRANCH"
-git -C "$MAIN" merge --ff-only "$BRANCH"
+git -C "$MAIN" merge --ff-only --quiet "$BRANCH"
+echo "main is at $(git -C "$MAIN" log -1 --format='%h %s')"
 git -C "$MAIN" worktree remove --force "$WT"
 git -C "$MAIN" branch -d "$BRANCH"
 if [[ $RESTART == 0 ]]; then
@@ -175,8 +176,10 @@ for d in $DISTS; do
 done
 
 start_router() {
-  (cd "$MAIN" && nohup "$NODE" server/dist/index.js >>"$LOG" 2>&1 & echo $! >"$PID_FILE")
-  wait_up "$LIVE_PORT"
+  # exec makes the router the background job itself, so no bash parent stays behind.
+  (cd "$MAIN" && exec nohup "$NODE" server/dist/index.js >>"$LOG" 2>&1) &
+  wait_up "$LIVE_PORT" || return 1
+  port_pid "$LIVE_PORT" >"$PID_FILE"
 }
 stop_router() { stop_pid "$(port_pid "$LIVE_PORT")"; }
 
