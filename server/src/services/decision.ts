@@ -2,6 +2,7 @@ import { getDb } from '../db/index.js';
 import { BEATAPI_BASE_URL } from '../providers/beatapi.js';
 import { APINEX_BASE_URL } from '../providers/apinex.js';
 import { BLOCKRUN_BASE_URL } from '../providers/blockrun.js';
+import { SILVR_BASE_URL } from '../providers/silvr.js';
 import { parseRetryAfterMs, parseStatedRetryMs } from '../providers/base.js';
 import { RetryHintTracker } from '../lib/retry-hint.js';
 import { getClientContext } from '../lib/client-context.js';
@@ -62,6 +63,7 @@ export interface ExtractionRequest {
 }
 
 export const CLAIRIC_MODEL = '@cf/cloudflare/clairic';
+export const isClairic = (id?: string) => id === CLAIRIC_MODEL || id === CLAIRIC_MODEL + '-flash';
 
 export interface DecisionResponse {
   /** The decision model that answered (its catalog id). */
@@ -88,6 +90,10 @@ export class DecisionError extends Error {
 export interface DecisionOptions {
   /** A decision model id, or 'auto' / undefined for the first one that works. */
   model?: string;
+  /** Pin one row of the decision registry (the dashboard's per-card Test). Two
+   *  rows can share a model id — a custom relay next to its catalog entry — and
+   *  `model` would try both, so a test could pass on a row nobody clicked. */
+  rowId?: number;
   signal?: AbortSignal;
   /** Overrides the request-scoped client agent (tests, internal callers). */
   clientAgent?: string | null;
@@ -164,6 +170,10 @@ async function upstream(url: string, platform: string, init: RequestInit, signal
     FETCH_TIMEOUT_MS,
   );
   if (!res.ok) {
+    if (platform === 'silvr') {
+      await res.body?.cancel();
+      throw new DecisionError(`SilvR decision request failed (${res.status})`, res.status, undefined, parseRetryAfterMs(res.headers.get('retry-after')));
+    }
     const text = await res.text().catch(() => '');
     // Same rule as the chat path (providers/base.ts buildUpstreamError): a
     // header Retry-After wins, then a back-off stated in the error BODY
@@ -206,6 +216,34 @@ function cloudflareKey(key: string): { accountId: string; token: string } {
 }
 
 const ADAPTERS: Record<string, Adapter> = {
+  // The tested SilvR route uses named predicate questions, not System One's
+  // state/object schema. Do not silently simulate untested choice/score types.
+  silvr: async (cred, modelId, body, signal) => {
+    if (modelId !== 'gemini-decision-1') throw new DecisionError('Unsupported SilvR decision model', 400);
+    const text = (value: unknown): string => typeof value === 'string' ? value : JSON.stringify(value) ?? '';
+    const questions = Object.entries(body.questions).map(([name, question]) => {
+      if (question.type !== 'noul') throw new DecisionError('SilvR decisions currently support noul predicate questions only', 400);
+      return { name, type: 'predicate', instructions: text(question.instructions) + (question.criteria === undefined ? '' : `\nCriteria: ${text(question.criteria)}`) };
+    });
+    const json = await upstream(`${SILVR_BASE_URL}/decisions`, 'silvr', {
+      method: 'POST', redirect: 'error', headers: { Authorization: `Bearer ${cred.key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: modelId, input: text(body.state), questions }),
+    }, signal) as { model?: unknown; answers?: unknown; usage?: { input_tokens?: unknown; output_tokens?: unknown }; error?: unknown } | null;
+    if (!json || json.error || json.model !== modelId || !Array.isArray(json.answers) || json.answers.length !== questions.length ||
+        typeof json.usage?.input_tokens !== 'number' || !Number.isFinite(json.usage.input_tokens) || json.usage.input_tokens < 0 || json.usage.output_tokens !== 0) {
+      throw new DecisionError('SilvR returned an invalid or substituted decision response', 502);
+    }
+    const answers = new Map<string, unknown>();
+    for (const raw of json.answers) {
+      const a = raw as { name?: unknown; type?: unknown; probability?: unknown } | null;
+      if (!a || typeof a.name !== 'string' || !Object.hasOwn(body.questions, a.name) || answers.has(a.name) || a.type !== 'predicate' ||
+          typeof a.probability !== 'number' || !Number.isFinite(a.probability) || a.probability < 0 || a.probability > 1) {
+        throw new DecisionError('SilvR returned an invalid or duplicate predicate answer', 502);
+      }
+      answers.set(a.name, { type: 'noul', noul: a.probability });
+    }
+    return { answers: Object.fromEntries(answers), usage: { input_tokens: json.usage.input_tokens, output_tokens: 0 } };
+  },
   // Gemini Decisions uses input (not System One's state) and reports usage
   // under total_input_tokens. It is not a generateContent/chat model.
   google: async (cred, modelId, body, signal) => {
@@ -555,19 +593,19 @@ function checkedDecisionResult(raw: unknown, platform: string, model: string, bo
 
 /** Clairic extracts typed fields; it cannot answer choice/noul/score questions.
  * Text + numeric fields are the live-tested subset exposed here. */
-async function extractClairic(cred: ReservedProviderCredential, body: ExtractionRequest, signal?: AbortSignal): Promise<AdapterResult> {
+async function extractClairic(cred: ReservedProviderCredential, model: string, body: ExtractionRequest, signal?: AbortSignal): Promise<AdapterResult> {
   const { accountId, token } = cloudflareKey(cred.key);
-  const payload = JSON.stringify({ model: 'clairic', state: body.state, fields: body.fields });
+  const payload = JSON.stringify({ ...(model === CLAIRIC_MODEL ? { model: 'clairic' } : {}), state: body.state, fields: body.fields });
   const json = await meterCloudflare(
-    cred.key, CLAIRIC_MODEL, { inputTokens: roughTokens(payload) },
-    () => upstream(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${CLAIRIC_MODEL}`, 'cloudflare', {
+    cred.key, model, { inputTokens: roughTokens(payload) },
+    () => upstream(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`, 'cloudflare', {
       method: 'POST', redirect: 'error', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: payload,
     }, signal) as Promise<{ success?: boolean; result?: { model?: unknown; answers?: unknown; usage?: unknown; truncated?: boolean } } | null>,
     j => (j?.result ? { inputTokens: usageOf(j.result.usage).input_tokens || roughTokens(payload) } : null),
     capAsDecisionError,
   );
-  if (!json?.success || json.result?.model !== 'clairic') throw new DecisionError('cloudflare returned an invalid Clairic result', 502);
+  if (!json?.success || !json.result || json.result.model !== model.split('/').at(-1)) throw new DecisionError('cloudflare returned an invalid Clairic result', 502);
   const answers = answersOf(json.result.answers, 'cloudflare');
   for (const [id, field] of Object.entries(body.fields)) {
     const a = answers[id] as { type?: unknown; value?: unknown } | undefined;
@@ -627,7 +665,7 @@ function hasUsableKey(platform: string): boolean {
  *  any key of platform 'custom', so it checks that key specifically. */
 export function decisionsAvailable(): boolean {
   return allDecisionRows().some(r => {
-    if (r.enabled !== 1 || r.model_id === CLAIRIC_MODEL || !ADAPTERS[r.platform]) return false;
+    if (r.enabled !== 1 || isClairic(r.model_id) || !ADAPTERS[r.platform]) return false;
     if (r.platform === 'custom') {
       if (r.key_id == null) return false;
       return !!getDb()
@@ -638,8 +676,13 @@ export function decisionsAvailable(): boolean {
   });
 }
 
-function decisionChain(model: string | undefined, skipPlatforms?: ReadonlySet<string>, extraction = false): DecisionModelRow[] {
-  const enabled = allDecisionRows().filter(r => r.enabled === 1 && ADAPTERS[r.platform] && (r.model_id === CLAIRIC_MODEL) === extraction);
+function decisionChain(model: string | undefined, skipPlatforms?: ReadonlySet<string>, rowId?: number, extraction = false): DecisionModelRow[] {
+  const enabled = allDecisionRows().filter(r => r.enabled === 1 && ADAPTERS[r.platform] && (isClairic(r.model_id)) === extraction);
+  if (rowId !== undefined) {
+    const pinned = enabled.find(r => r.id === rowId);
+    if (!pinned) throw new DecisionError('Decision model is unavailable or turned off', 400);
+    return [pinned];
+  }
   if (!model || model === 'auto') return skipPlatforms ? enabled.filter(r => !skipPlatforms.has(r.platform)) : enabled;
   const pinned = enabled.filter(r => r.model_id === model);
   if (pinned.length === 0) {
@@ -657,9 +700,9 @@ function decisionChain(model: string | undefined, skipPlatforms?: ReadonlySet<st
 export async function runDecision(body: DecisionRequest | ExtractionRequest, opts: DecisionOptions = {}): Promise<DecisionResponse> {
   const extraction = 'fields' in body;
   if (extraction && body.questions !== undefined) throw new DecisionError('Send fields or questions, not both', 400);
-  if (!extraction && opts.model === CLAIRIC_MODEL) throw new DecisionError('Clairic requires fields, not questions', 400);
-  if (extraction && opts.model && !['auto', CLAIRIC_MODEL].includes(opts.model)) throw new DecisionError('This model does not support extraction fields', 400);
-  const chain = decisionChain(opts.model, opts.skipPlatforms, extraction);
+  if (!extraction && isClairic(opts.model)) throw new DecisionError('Clairic requires fields, not questions', 400);
+  if (extraction && opts.model && opts.model !== 'auto' && !isClairic(opts.model)) throw new DecisionError('This model does not support extraction fields', 400);
+  const chain = decisionChain(opts.model, opts.skipPlatforms, opts.rowId, extraction);
   const clientAgent = opts.clientAgent !== undefined ? opts.clientAgent : getClientContext().agent;
   const questionCount = Object.keys(extraction ? body.fields : body.questions).length;
 
@@ -688,7 +731,7 @@ export async function runDecision(body: DecisionRequest | ExtractionRequest, opt
       attempted++;
       const started = Date.now();
       try {
-        const out = extraction ? await extractClairic(credential, body, opts.signal)
+        const out = extraction ? await extractClairic(credential, row.model_id, body, opts.signal)
           : await ADAPTERS[row.platform]!(credential, row.model_id, body, opts.signal);
         logDecision(row, credential.id, 'ok', Date.now() - started, questionCount, out.usage.input_tokens, clientAgent, null);
         // A served decision is evidence the key works, the same as a served

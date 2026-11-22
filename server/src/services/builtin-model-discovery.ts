@@ -1,3 +1,4 @@
+import { specialistTask } from './specialist-text.js';
 import type { Db } from '../db/types.js';
 import type { Scheduler } from '../lib/scheduler.js';
 import type { Platform } from '@freellmapi/shared/types.js';
@@ -245,7 +246,7 @@ export function autoRegistrable(
   let nonChat = 0;
   let paid = 0;
   for (const model of models) {
-    if (model.kind !== undefined) { nonChat += 1; continue; }
+    if (model.kind !== undefined || specialistTask(model.id, platform)) { nonChat += 1; continue; }
     if (!acceptsModel(platform, model)) { paid += 1; continue; }
     if (freePatterns.length > 0 && !freePatterns.some(p => patternMatches(p, model.id))) { paid += 1; continue; }
     accepted.push(model);
