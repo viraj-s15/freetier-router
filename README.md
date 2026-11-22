@@ -49,6 +49,7 @@ The catalog lists models that its maintainers test. Discovery adds every model t
 - [How it compares](#how-it-compares)
 - [Features](#features)
 - [Set it up with an agent](#set-it-up-with-an-agent)
+- [Sync with upstream](#sync-with-upstream)
 - [Quick start](#quick-start)
 - [Desktop app](#desktop-app)
 - [Works with OpenAI-compatible clients](#works-with-openai-compatible-clients)
@@ -174,6 +175,16 @@ The scope is deliberately narrow — see [what's not supported yet](docs/en/arch
 
 ```text
 Set up FreeTier Router by following AGENT-SETUP.md in https://github.com/viraj-s15/freetier-router.
+```
+
+## Sync with upstream
+
+Run `scripts/fork/sync-upstream.sh` to merge new upstream FreeLLMAPI commits into this fork. The script merges in a separate worktree and runs the lint, the build and every test suite. It also runs the fork guard test and the pi client tests. Then it tests the new build on port 6970 with a copy of your DB. If all checks pass, it moves `main` forward and restarts the router on port 6969. If the new router fails, it puts back the old build and the DB. It never pushes.
+
+The steps, the options and what to do about merge conflicts are in [scripts/fork/README.md](scripts/fork/README.md). To let a coding agent do the sync, tell it:
+
+```text
+Sync this fork with upstream by following the "Sync with upstream" rules in AGENTS.md.
 ```
 
 ## Quick start
