@@ -1,0 +1,809 @@
+{
+  ".github/workflows/desktop-release.yml": [
+    "app=\"$app_dir/FreeTier Router.app\"",
+    "ELECTRON_RUN_AS_NODE=1 \"$app/Contents/MacOS/FreeTier Router\" \\"
+  ],
+  ".github/workflows/docker.yml": [
+    "IMAGE: ghcr.io/${{ github.repository_owner }}/freetier-router"
+  ],
+  "README.md": [
+    "# FreeTier Router",
+    "FreeTier Router is an unofficial fork of [FreeLLMAPI](https://github.com/tashfeenahmed/freellmapi) by Tashfeen Ahmed, under the same MIT license. It aggregates free tiers from dozens of providers behind one OpenAI-compatible `/v1` endpoint, stores keys encrypted, routes each request to the best available model, and falls over to the next provider when one is rate-limited.",
+    "Settings for discovery are in [`.env.example`](.env.example) under \"Model discovery\". The rest of this README comes from upstream and still describes the shared features. Where it names FreeLLMAPI, read FreeTier Router, except for the catalog service and the Premium feed.",
+    "npx freetier-router setup-claude --url http://localhost:3001 --api-key <unified-key>",
+    "Set up FreeTier Router by following AGENT-SETUP.md in https://github.com/viraj-s15/freetier-router.",
+    "git clone https://github.com/viraj-s15/freetier-router.git",
+    "cd freetier-router",
+    "The fork publishes no desktop release yet. Build it from source with `npm run desktop:dist` (steps and where your data lives: [docs/en/install/01-install.md#desktop-app](docs/en/install/01-install.md#desktop-app)). It keeps its data in its own folder, `FreeTier Router`, so it never reads or changes an upstream FreeLLMAPI desktop install.",
+    "Anything that can target an OpenAI-compatible base URL works: set it to `http://localhost:3001/v1` with the unified key from the dashboard. Every generator supports `--dry-run`; `npx freetier-router launch` (Claude Code, run from the repo folder) and `launch-codex` (Codex) keep credentials out of config files entirely. The router also doubles as an MCP server your agents can introspect mid-session.",
+    "Provider keys can be managed from the terminal too, with a dashboard session token (`FREELLMAPI_DASHBOARD_TOKEN` or `--token`): `npx freetier-router keys add|list|remove|test <platform>`, where `keys test` re-checks stored keys. See [cli/README.md](cli/README.md#provider-keys)."
+  ],
+  "README.ru.md": [
+    "> **FreeTier Router** is an unofficial fork of FreeLLMAPI. This translation comes from upstream. For what the fork changes, how to install it, and its free-policy billing note, read the [English README](README.md#what-this-fork-changes)."
+  ],
+  "README.tr.md": [
+    "> **FreeTier Router** is an unofficial fork of FreeLLMAPI. This translation comes from upstream. For what the fork changes, how to install it, and its free-policy billing note, read the [English README](README.md#what-this-fork-changes)."
+  ],
+  "README.uz.md": [
+    "> **FreeTier Router** is an unofficial fork of FreeLLMAPI. This translation comes from upstream. For what the fork changes, how to install it, and its free-policy billing note, read the [English README](README.md#what-this-fork-changes)."
+  ],
+  "README.zh-cn.md": [
+    "> **FreeTier Router** is an unofficial fork of FreeLLMAPI. This translation comes from upstream. For what the fork changes, how to install it, and its free-policy billing note, read the [English README](README.md#what-this-fork-changes)."
+  ],
+  "SECURITY.md": [
+    "FreeTier Router (a fork of FreeLLMAPI) holds real credentials: your provider API keys (encrypted at rest in",
+    "[Security tab](https://github.com/viraj-s15/freetier-router/security) and click"
+  ],
+  "cli/package.json": [
+    "\"name\": \"freetier-router\",",
+    "\"description\": \"Set up coding agents to use a FreeTier Router gateway\",",
+    "\"url\": \"git+https://github.com/viraj-s15/freetier-router.git\",",
+    "\"homepage\": \"https://github.com/viraj-s15/freetier-router/tree/main/cli#readme\",",
+    "\"url\": \"https://github.com/viraj-s15/freetier-router/issues\"",
+    "\"freetier-router\",",
+    "\"freetier-router\": \"dist/index.js\""
+  ],
+  "cli/src/__snapshots__/tools.test.ts.snap": [
+    "\"For zero-persistence credentials, prefer: freetier-router launch\","
+  ],
+  "cli/src/index.test.ts": [
+    ")).toThrow(\"freetier-router setup-claude --profile missing\");"
+  ],
+  "cli/src/index.ts": [
+    "`freetier-router: could not fetch the unfiltered model catalog (${rosters.degradedReason}). `",
+    "`freetier-router: '${resolved.id}' is registered but not currently available `",
+    "'  freetier-router <command> [--url URL] [--api-key KEY] [--profile NAME] [--model ID] [--dry-run]',",
+    "+ `Create it with: freetier-router setup-claude --profile ${options.profile}`,",
+    "return `freetier-router requires Node.js 20 or newer (found ${version}). Install one from https://nodejs.org and re-run.`;",
+    "process.stderr.write(`freetier-router: ${unsupported}\\n`);",
+    "process.stderr.write(`freetier-router: ${error instanceof Error ? error.message : String(error)}\\n`);"
+  ],
+  "cli/src/keys.ts": [
+    "'  freetier-router keys add <platform> [--key KEY]',",
+    "'  freetier-router keys list',",
+    "'  freetier-router keys remove <platform> [--id ID]',",
+    "'  freetier-router keys test <platform> [--id ID]',"
+  ],
+  "cli/src/models.ts": [
+    "+ ' Run `freetier-router list-models` to see what is registered.',"
+  ],
+  "cli/src/tools.ts": [
+    "'For zero-persistence credentials, prefer: freetier-router launch',",
+    "['generic', 'Generic OpenAI client', 'agent', 'guide', 'OpenAI Chat', '/v1', 'setup-generic', 'https://github.com/viraj-s15/freetier-router', generic],"
+  ],
+  "cli/tools.json": [
+    "{\"id\":\"generic\",\"name\":\"Generic OpenAI client\",\"category\":\"agent\",\"configType\":\"guide\",\"protocol\":\"OpenAI Chat\",\"baseUrlSupport\":\"/v1\",\"command\":\"setup-generic\",\"docsUrl\":\"https://github.com/viraj-s15/freetier-router\"}"
+  ],
+  "client/index.html": [
+    "<title>FreeTier Router · Unified LLM Router</title>"
+  ],
+  "client/src/App.tsx": [
+    "<span className=\"font-semibold tracking-tight text-sm\">FreeTier Router</span>"
+  ],
+  "client/src/components/auth-gate.desktop.test.tsx": [
+    "expect(container.textContent).toContain('Quit FreeTier Router and open it again')"
+  ],
+  "client/src/components/auth-gate.tsx": [
+    "<span className=\"font-semibold tracking-tight text-sm\">FreeTier Router</span>"
+  ],
+  "client/src/components/updates-dialog.tsx": [
+    "const SOURCE_COMMAND = 'git fetch https://github.com/viraj-s15/freetier-router.git main && git merge --ff-only FETCH_HEAD && npm ci && npm run build'",
+    "const subtitle = version ? `FreeTier Router v${version}` : result?.localSha ? `FreeTier Router ${result.localSha}` : 'FreeTier Router'"
+  ],
+  "client/src/data/agent-tools.json": [
+    "{\"id\":\"generic\",\"name\":\"Generic OpenAI client\",\"category\":\"agent\",\"configType\":\"guide\",\"protocol\":\"OpenAI Chat\",\"baseUrlSupport\":\"/v1\",\"command\":\"setup-generic\",\"docsUrl\":\"https://github.com/viraj-s15/freetier-router\"}"
+  ],
+  "client/src/i18n/locales/am.json": [
+    "\"desktopSessionFailed\": \"ዳሽቦርዱ ወደ አካባቢያዊ አገልጋዩ መግባት አልቻለም። FreeTier Router ን ዘግተው እንደገና ይክፈቱት።\"",
+    "\"startAtLoginHelp\": \"ወደ ኮምፒውተርዎ ሲገቡ FreeTier Router በራስ-ሰር ያስነሱ\",",
+    "\"restartAfterUpdate\": \"ግንባታው ከተጠናቀቀ በኋላ FreeTier Routerን እንደገና ያስጀምሩ።\",",
+    "\"updateReadyHint\": \"ወርዷል። FreeTier Router ውሂብዎን ያስቀምጣል፣ እንደገና ይጀምራል እና አዲሱን ስሪት ይከፍታል።\",",
+    "\"updatingContainer\": \"አዲሱን ምስል እያወረደ እንደገና በመጀመር ላይ። FreeTier Router ሲመለስ ይህ ገጽ እንደገና ይጫናል።\",",
+    "\"updateNowTimeout\": \"FreeTier Router ከ5 ደቂቃ በኋላም እንደገና አልጀመረም። የwatchtower ኮንቴይነርን ምዝግብ ማስታወሻዎች ይመልከቱ።\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"አዲስ የFreeTier Router ስሪት ተጭኗል።\","
+  ],
+  "client/src/i18n/locales/ar.json": [
+    "\"desktopSessionFailed\": \"تعذّر على لوحة التحكم تسجيل الدخول إلى الخادم المحلي. أغلق FreeTier Router ثم افتحه من جديد.\"",
+    "\"startAtLoginHelp\": \"شغّل FreeTier Router تلقائيًا عند تسجيل الدخول إلى جهاز الكمبيوتر.\",",
+    "\"restartAfterUpdate\": \"أعد تشغيل FreeTier Router بعد اكتمال البنية.\",",
+    "\"updateReadyHint\": \"اكتمل التنزيل. يحفظ FreeTier Router نسخة احتياطية من بياناتك ثم يعيد التشغيل ويفتح الإصدار الجديد.\",",
+    "\"updatingContainer\": \"جارٍ سحب الصورة الجديدة وإعادة التشغيل. ستُعاد تحميل هذه الصفحة عند عودة FreeTier Router.\",",
+    "\"updateNowTimeout\": \"لم يُعد FreeTier Router التشغيل بعد 5 دقائق. راجع سجلات حاوية watchtower.\"",
+    "\"usedScopeHint\": \"طلبات المحادثة فقط، منذ بداية هذا الشهر الميلادي، مجمَّعة عبر كل النماذج في السلسلة النشطة — بما في ذلك النقاط المخصّصة. لا تُحتسب حركة المرور التي ترسلها إلى مزوّد خارج FreeTier Router.\",",
+    "\"newBuild\": \"تم تثبيت إصدار أحدث من FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/az.json": [
+    "\"desktopSessionFailed\": \"İdarə paneli lokal serverə daxil ola bilmədi. FreeTier Router-dən çıxın və yenidən açın.\"",
+    "\"startAtLoginHelp\": \"Kompüterə daxil olanda FreeTier Router avtomatik başlasın.\",",
+    "\"restartAfterUpdate\": \"Quruluş tamamlandıqdan sonra FreeTier Router-ni yenidən başladın.\",",
+    "\"updateReadyHint\": \"Endirildi. FreeTier Router məlumatlarınızın ehtiyat nüsxəsini çıxarır, yenidən başlayır və yeni versiyanı açır.\",",
+    "\"updatingContainer\": \"Yeni şəkil endirilir və yenidən başladılır. FreeTier Router qayıdanda bu səhifə yenilənəcək.\",",
+    "\"updateNowTimeout\": \"FreeTier Router 5 dəqiqədən sonra da yenidən başlamayıb. watchtower konteynerinin jurnallarına baxın.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router-nin daha yeni versiyası quraşdırılıb.\","
+  ],
+  "client/src/i18n/locales/bg.json": [
+    "\"desktopSessionFailed\": \"Таблото не успя да влезе в локалния сървър. Затворете FreeTier Router и го отворете отново.\"",
+    "\"startAtLoginHelp\": \"Автоматично стартирайте FreeTier Router при влизане в компютъра си.\",",
+    "\"restartAfterUpdate\": \"Рестартирайте FreeTier Router след завършване на компилацията.\",",
+    "\"updateReadyHint\": \"Изтеглено. FreeTier Router архивира данните ви, рестартира и отваря новата версия.\",",
+    "\"updatingContainer\": \"Изтегля се новият образ и се рестартира. Страницата ще се презареди, когато FreeTier Router се върне.\",",
+    "\"updateNowTimeout\": \"FreeTier Router не се е рестартирал след 5 минути. Проверете логовете на контейнера watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"Инсталирана е по-нова версия на FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/bn.json": [
+    "\"desktopSessionFailed\": \"ড্যাশবোর্ড লোকাল সার্ভারে সাইন ইন করতে পারেনি। FreeTier Router বন্ধ করে আবার খুলুন।\"",
+    "\"startAtLoginHelp\": \"কম্পিউটারে সাইন ইন করলে স্বয়ংক্রিয়ভাবে FreeTier Router চালু করুন।\",",
+    "\"restartAfterUpdate\": \"বিল্ড সম্পূর্ণ হওয়ার পর FreeTier Router পুনরায় চালু করুন।\",",
+    "\"updateReadyHint\": \"ডাউনলোড হয়েছে। FreeTier Router আপনার ডেটার ব্যাকআপ নেয়, রিস্টার্ট করে এবং নতুন সংস্করণ খোলে।\",",
+    "\"updatingContainer\": \"নতুন ইমেজ টেনে আনা হচ্ছে এবং রিস্টার্ট হচ্ছে। FreeTier Router ফিরে এলে এই পেজ রিলোড হবে।\",",
+    "\"updateNowTimeout\": \"৫ মিনিট পরও FreeTier Router রিস্টার্ট হয়নি। watchtower কন্টেইনারের লগ দেখুন।\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router-এর একটি নতুন সংস্করণ ইনস্টল হয়েছে।\","
+  ],
+  "client/src/i18n/locales/cs.json": [
+    "\"desktopSessionFailed\": \"Řídicí panel se nedokázal přihlásit k místnímu serveru. Ukončete FreeTier Router a spusťte jej znovu.\"",
+    "\"startAtLoginHelp\": \"Po přihlášení k počítači automaticky spustí FreeTier Router.\",",
+    "\"restartAfterUpdate\": \"Po dokončení sestavení restartujte FreeTier Router.\",",
+    "\"updateReadyHint\": \"Staženo. FreeTier Router zálohuje vaše data, restartuje se a otevře novou verzi.\",",
+    "\"updatingContainer\": \"Stahuje se nový obraz a probíhá restart. Stránka se znovu načte, až bude FreeTier Router zpět.\",",
+    "\"updateNowTimeout\": \"FreeTier Router se ani po 5 minutách nerestartoval. Zkontrolujte logy kontejneru watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"Je nainstalována novější verze FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/da.json": [
+    "\"desktopSessionFailed\": \"Dashboardet kunne ikke logge ind på den lokale server. Afslut FreeTier Router, og åbn det igen.\"",
+    "\"startAtLoginHelp\": \"Start FreeTier Router automatisk, når du logger på din computer.\",",
+    "\"restartAfterUpdate\": \"Genstart FreeTier Router, når buildet er færdigt.\",",
+    "\"updateReadyHint\": \"Hentet. FreeTier Router tager backup af dine data, genstarter og åbner den nye version.\",",
+    "\"updatingContainer\": \"Henter det nye image og genstarter. Siden genindlæses, når FreeTier Router er tilbage.\",",
+    "\"updateNowTimeout\": \"FreeTier Router er ikke genstartet efter 5 minutter. Tjek logfilerne for watchtower-containeren.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"En nyere version af FreeTier Router er installeret.\","
+  ],
+  "client/src/i18n/locales/de.json": [
+    "\"desktopSessionFailed\": \"Das Dashboard konnte sich nicht am lokalen Server anmelden. Beenden Sie FreeTier Router und öffnen Sie es erneut.\"",
+    "\"startAtLoginHelp\": \"FreeTier Router automatisch starten, wenn Sie sich an Ihrem Computer anmelden.\",",
+    "\"restartAfterUpdate\": \"FreeTier Router nach Abschluss des Builds neu starten.\",",
+    "\"updateReadyHint\": \"Heruntergeladen. FreeTier Router sichert Ihre Daten, startet neu und öffnet die neue Version.\",",
+    "\"updatingContainer\": \"Das neue Image wird geladen und neu gestartet. Die Seite lädt neu, sobald FreeTier Router wieder da ist.\",",
+    "\"updateNowTimeout\": \"FreeTier Router ist nach 5 Minuten nicht neu gestartet. Prüfen Sie die Logs des watchtower-Containers.\"",
+    "\"usedScopeHint\": \"Nur Chat-Anfragen, seit Beginn dieses Kalendermonats, über alle Modelle der aktiven Kette summiert – benutzerdefinierte Endpunkte eingeschlossen. Datenverkehr, den Sie außerhalb von FreeTier Router an einen Anbieter senden, wird nicht gezählt.\",",
+    "\"newBuild\": \"Eine neuere Version von FreeTier Router ist installiert.\","
+  ],
+  "client/src/i18n/locales/el.json": [
+    "\"desktopSessionFailed\": \"Ο πίνακας ελέγχου δεν μπόρεσε να συνδεθεί στον τοπικό διακομιστή. Κλείστε το FreeTier Router και ανοίξτε το ξανά.\"",
+    "\"startAtLoginHelp\": \"Εκκινήστε αυτόματα το FreeTier Router όταν συνδέεστε στον υπολογιστή σας.\",",
+    "\"restartAfterUpdate\": \"Επανεκκινήστε το FreeTier Router μετά την ολοκλήρωση του build.\",",
+    "\"updateReadyHint\": \"Η λήψη ολοκληρώθηκε. Το FreeTier Router δημιουργεί αντίγραφο ασφαλείας των δεδομένων σας, επανεκκινείται και ανοίγει τη νέα έκδοση.\",",
+    "\"updatingContainer\": \"Λήψη της νέας εικόνας και επανεκκίνηση. Η σελίδα θα φορτωθεί ξανά όταν επιστρέψει το FreeTier Router.\",",
+    "\"updateNowTimeout\": \"Το FreeTier Router δεν έχει επανεκκινηθεί μετά από 5 λεπτά. Ελέγξτε τα αρχεία καταγραφής του κοντέινερ watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"Έχει εγκατασταθεί νεότερη έκδοση του FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/en.json": [
+    "\"desktopSessionFailed\": \"The dashboard could not sign in to the local server. Quit FreeTier Router and open it again.\"",
+    "\"startAtLoginHelp\": \"Launch FreeTier Router automatically when you sign into your computer.\",",
+    "\"restartAfterUpdate\": \"Restart FreeTier Router after the build completes.\",",
+    "\"updateReadyHint\": \"Downloaded. FreeTier Router backs up your data, restarts and opens the new version.\",",
+    "\"updatingContainer\": \"Pulling the new image and restarting. This page reloads when FreeTier Router is back.\",",
+    "\"updateNowTimeout\": \"FreeTier Router has not restarted after 5 minutes. Check the watchtower container's logs.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"A newer version of FreeTier Router is installed.\","
+  ],
+  "client/src/i18n/locales/es.json": [
+    "\"desktopSessionFailed\": \"El panel no pudo iniciar sesión en el servidor local. Cierra FreeTier Router y vuelve a abrirlo.\"",
+    "\"startAtLoginHelp\": \"Inicia FreeTier Router automáticamente al iniciar sesión en tu computadora.\",",
+    "\"restartAfterUpdate\": \"Reinicia FreeTier Router cuando finalice la compilación.\",",
+    "\"updateReadyHint\": \"Descargada. FreeTier Router hace una copia de seguridad de tus datos, se reinicia y abre la nueva versión.\",",
+    "\"updatingContainer\": \"Descargando la nueva imagen y reiniciando. Esta página se recargará cuando FreeTier Router vuelva.\",",
+    "\"updateNowTimeout\": \"FreeTier Router no se ha reiniciado tras 5 minutos. Revisa los registros del contenedor watchtower.\"",
+    "\"usedScopeHint\": \"Solo solicitudes de chat, desde el inicio de este mes natural, sumadas sobre todos los modelos de la cadena activa, incluidos los endpoints personalizados. El tráfico que envías a un proveedor fuera de FreeTier Router no se cuenta.\",",
+    "\"newBuild\": \"Hay una versión más reciente de FreeTier Router instalada.\","
+  ],
+  "client/src/i18n/locales/fa.json": [
+    "\"desktopSessionFailed\": \"داشبورد نتوانست به سرور محلی وارد شود. FreeTier Router را ببندید و دوباره باز کنید.\"",
+    "\"startAtLoginHelp\": \"با ورود به رایانه، FreeTier Router را به‌طور خودکار راه‌اندازی کنید.\",",
+    "\"restartAfterUpdate\": \"پس از تکمیل بیلد، FreeTier Router را راه‌اندازی مجدد کنید.\",",
+    "\"updateReadyHint\": \"دانلود شد. FreeTier Router از داده‌های شما پشتیبان می‌گیرد، دوباره راه‌اندازی می‌شود و نسخهٔ جدید را باز می‌کند.\",",
+    "\"updatingContainer\": \"در حال دریافت ایمیج جدید و راه‌اندازی مجدد. وقتی FreeTier Router برگردد این صفحه دوباره بارگذاری می‌شود.\",",
+    "\"updateNowTimeout\": \"FreeTier Router پس از ۵ دقیقه دوباره راه‌اندازی نشده است. گزارش‌های کانتینر watchtower را بررسی کنید.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"نسخهٔ جدیدتری از FreeTier Router نصب شده است.\","
+  ],
+  "client/src/i18n/locales/fi.json": [
+    "\"desktopSessionFailed\": \"Hallintapaneeli ei voinut kirjautua paikalliselle palvelimelle. Sulje FreeTier Router ja avaa se uudelleen.\"",
+    "\"startAtLoginHelp\": \"Käynnistä FreeTier Router automaattisesti, kun kirjaudut tietokoneelle.\",",
+    "\"restartAfterUpdate\": \"Käynnistä FreeTier Router uudelleen koonnin valmistuttua.\",",
+    "\"updateReadyHint\": \"Ladattu. FreeTier Router varmuuskopioi tietosi, käynnistyy uudelleen ja avaa uuden version.\",",
+    "\"updatingContainer\": \"Ladataan uutta imagea ja käynnistetään uudelleen. Sivu latautuu uudelleen, kun FreeTier Router palaa.\",",
+    "\"updateNowTimeout\": \"FreeTier Router ei ole käynnistynyt uudelleen 5 minuutissa. Tarkista watchtower-kontin lokit.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router:n uudempi versio on asennettu.\","
+  ],
+  "client/src/i18n/locales/fr.json": [
+    "\"desktopSessionFailed\": \"Le tableau de bord n'a pas pu se connecter au serveur local. Quittez FreeTier Router et rouvrez-le.\"",
+    "\"startAtLoginHelp\": \"Lancez FreeTier Router automatiquement à l'ouverture de session sur votre ordinateur.\",",
+    "\"restartAfterUpdate\": \"Redémarrez FreeTier Router une fois le build terminé.\",",
+    "\"updateReadyHint\": \"Téléchargée. FreeTier Router sauvegarde vos données, redémarre et ouvre la nouvelle version.\",",
+    "\"updatingContainer\": \"Téléchargement de la nouvelle image et redémarrage. Cette page se recharge quand FreeTier Router est de retour.\",",
+    "\"updateNowTimeout\": \"FreeTier Router n’a pas redémarré après 5 minutes. Consultez les journaux du conteneur watchtower.\"",
+    "\"usedScopeHint\": \"Uniquement les requêtes de chat, depuis le début de ce mois civil, cumulées sur tous les modèles de la chaîne active, endpoints personnalisés compris. Le trafic envoyé à un fournisseur en dehors de FreeTier Router n'est pas compté.\",",
+    "\"newBuild\": \"Une version plus récente de FreeTier Router est installée.\","
+  ],
+  "client/src/i18n/locales/gu.json": [
+    "\"desktopSessionFailed\": \"ડેશબોર્ડ લોકલ સર્વરમાં સાઇન ઇન કરી શક્યું નથી. FreeTier Router બંધ કરીને ફરીથી ખોલો.\"",
+    "\"startAtLoginHelp\": \"તમે તમારા કમ્પ્યુટર પર સાઇન ઇન કરો ત્યારે FreeTier Router ને આપમેળે લૉન્ચ કરો.\",",
+    "\"restartAfterUpdate\": \"બિલ્ડ પૂર્ણ થયા પછી FreeTier Router ફરી શરૂ કરો.\",",
+    "\"updateReadyHint\": \"ડાઉનલોડ થયું. FreeTier Router તમારા ડેટાનો બેકઅપ લે છે, ફરી શરૂ થાય છે અને નવું સંસ્કરણ ખોલે છે.\",",
+    "\"updatingContainer\": \"નવી ઇમેજ ખેંચી રહ્યા છીએ અને ફરી શરૂ કરી રહ્યા છીએ. FreeTier Router પાછું આવે ત્યારે આ પેજ ફરી લોડ થશે.\",",
+    "\"updateNowTimeout\": \"5 મિનિટ પછી પણ FreeTier Router ફરી શરૂ થયું નથી. watchtower કન્ટેનરના લૉગ તપાસો.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router નું નવું સંસ્કરણ ઇન્સ્ટોલ થયું છે.\","
+  ],
+  "client/src/i18n/locales/ha.json": [
+    "\"desktopSessionFailed\": \"Dashboard ɗin bai iya shiga uwar garken gida ba. Rufe FreeTier Router ka sake buɗe shi.\"",
+    "\"startAtLoginHelp\": \"ƙaddamar da FreeTier Router ta atomatik lokacin shiga kwamfutarka.\",",
+    "\"restartAfterUpdate\": \"Sake kunna FreeTier Router bayan an gama build ɗin.\",",
+    "\"updateReadyHint\": \"An sauke. FreeTier Router yana adana bayananka, sai ya sake farawa ya buɗe sabon sigar.\",",
+    "\"updatingContainer\": \"Ana jan sabon hoto ana sake farawa. Wannan shafin zai sake lodawa idan FreeTier Router ya dawo.\",",
+    "\"updateNowTimeout\": \"FreeTier Router bai sake farawa ba bayan minti 5. Duba bayanan log na kwantena watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"An shigar da sabon sigar FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/he.json": [
+    "\"desktopSessionFailed\": \"לוח הבקרה לא הצליח להתחבר לשרת המקומי. סגור את FreeTier Router ופתח אותו מחדש.\"",
+    "\"startAtLoginHelp\": \"השק את FreeTier Router אוטומטית בכניסה למחשב.\",",
+    "\"restartAfterUpdate\": \"הפעל מחדש את FreeTier Router לאחר השלמת הבנייה.\",",
+    "\"updateReadyHint\": \"ההורדה הושלמה. FreeTier Router מגבה את הנתונים שלך, מופעל מחדש ופותח את הגרסה החדשה.\",",
+    "\"updatingContainer\": \"מושך את האימג׳ החדש ומפעיל מחדש. הדף ייטען מחדש כש-FreeTier Router יחזור.\",",
+    "\"updateNowTimeout\": \"FreeTier Router לא הופעל מחדש אחרי 5 דקות. בדקו את היומנים של מכולת watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"הותקנה גרסה חדשה יותר של FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/hi.json": [
+    "\"desktopSessionFailed\": \"डैशबोर्ड लोकल सर्वर में साइन इन नहीं कर सका। FreeTier Router बंद करके दोबारा खोलें।\"",
+    "\"startAtLoginHelp\": \"अपने कंप्यूटर में साइन इन करने पर FreeTier Router स्वचालित रूप से लॉन्च करें।\",",
+    "\"restartAfterUpdate\": \"बिल्ड पूरा होने के बाद FreeTier Router को पुनः आरंभ करें।\",",
+    "\"updateReadyHint\": \"डाउनलोड हो गया। FreeTier Router आपके डेटा का बैकअप लेता है, रीस्टार्ट होता है और नया संस्करण खोलता है।\",",
+    "\"updatingContainer\": \"नई इमेज खींची जा रही है और रीस्टार्ट हो रहा है। FreeTier Router वापस आने पर यह पेज रीलोड होगा।\",",
+    "\"updateNowTimeout\": \"5 मिनट बाद भी FreeTier Router रीस्टार्ट नहीं हुआ। watchtower कंटेनर के लॉग देखें।\"",
+    "\"usedScopeHint\": \"केवल चैट अनुरोध, इस कैलेंडर माह की शुरुआत से, सक्रिय शृंखला के सभी मॉडलों (कस्टम एंडपॉइंट सहित) का योग। FreeTier Router के बाहर सीधे प्रदाता को भेजा गया ट्रैफ़िक इसमें नहीं गिना जाता।\",",
+    "\"newBuild\": \"FreeTier Router का नया संस्करण इंस्टॉल है।\","
+  ],
+  "client/src/i18n/locales/hr.json": [
+    "\"desktopSessionFailed\": \"Nadzorna ploča nije se uspjela prijaviti na lokalni poslužitelj. Zatvorite FreeTier Router i ponovno ga otvorite.\"",
+    "\"startAtLoginHelp\": \"Automatski pokrenite FreeTier Router prilikom prijave na računalo.\",",
+    "\"restartAfterUpdate\": \"Ponovno pokrenite FreeTier Router nakon dovršetka izgradnje.\",",
+    "\"updateReadyHint\": \"Preuzeto. FreeTier Router sigurnosno kopira vaše podatke, ponovno se pokreće i otvara novu verziju.\",",
+    "\"updatingContainer\": \"Preuzimanje nove slike i ponovno pokretanje. Stranica će se ponovno učitati kad se FreeTier Router vrati.\",",
+    "\"updateNowTimeout\": \"FreeTier Router se nije ponovno pokrenuo nakon 5 minuta. Provjerite zapise kontejnera watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"Instalirana je novija verzija FreeTier Router-ja.\","
+  ],
+  "client/src/i18n/locales/hu.json": [
+    "\"desktopSessionFailed\": \"Az irányítópult nem tudott bejelentkezni a helyi szerverre. Lépjen ki a FreeTier Router alkalmazásból, és nyissa meg újra.\"",
+    "\"startAtLoginHelp\": \"Automatikusan indítsa el a FreeTier Router-t, amikor bejelentkezik a számítógépére.\",",
+    "\"restartAfterUpdate\": \"A build befejezése után indítsa újra a FreeTier Router-t.\",",
+    "\"updateReadyHint\": \"Letöltve. A FreeTier Router biztonsági mentést készít az adatairól, újraindul, és megnyitja az új verziót.\",",
+    "\"updatingContainer\": \"Az új image letöltése és újraindítás. Az oldal újratöltődik, amikor a FreeTier Router visszatér.\",",
+    "\"updateNowTimeout\": \"A FreeTier Router 5 perc után sem indult újra. Nézze meg a watchtower konténer naplóit.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"A FreeTier Router újabb verziója van telepítve.\","
+  ],
+  "client/src/i18n/locales/id.json": [
+    "\"desktopSessionFailed\": \"Dasbor tidak dapat masuk ke server lokal. Tutup FreeTier Router lalu buka lagi.\"",
+    "\"startAtLoginHelp\": \"Luncurkan FreeTier Router secara otomatis saat Anda masuk ke komputer.\",",
+    "\"restartAfterUpdate\": \"Mulai ulang FreeTier Router setelah proses build selesai.\",",
+    "\"updateReadyHint\": \"Selesai diunduh. FreeTier Router mencadangkan data Anda, memulai ulang, lalu membuka versi baru.\",",
+    "\"updatingContainer\": \"Menarik image baru dan memulai ulang. Halaman ini dimuat ulang saat FreeTier Router kembali.\",",
+    "\"updateNowTimeout\": \"FreeTier Router belum dimulai ulang setelah 5 menit. Periksa log kontainer watchtower.\"",
+    "\"usedScopeHint\": \"Hanya permintaan chat, sejak awal bulan kalender ini, dijumlahkan atas semua model dalam rantai aktif — termasuk endpoint kustom. Lalu lintas yang Anda kirim ke penyedia di luar FreeTier Router tidak dihitung.\",",
+    "\"newBuild\": \"Versi FreeTier Router yang lebih baru telah terpasang.\","
+  ],
+  "client/src/i18n/locales/ig.json": [
+    "\"desktopSessionFailed\": \"Dashboard enweghị ike ịbanye na sava mpaghara. Mechie FreeTier Router ma mepee ya ọzọ.\"",
+    "\"startAtLoginHelp\": \"Mịlọ FreeTier Router ozugbo mgbe ị banyere na kọmputa gị.\",",
+    "\"restartAfterUpdate\": \"Malitegharịa FreeTier Router mgbe build ahụ gwụchara.\",",
+    "\"updateReadyHint\": \"Ebudatala. FreeTier Router na-echekwa data gị, malitegharịa ma mepee ụdị ọhụrụ.\",",
+    "\"updatingContainer\": \"Na-adọta onyonyo ọhụrụ ma na-amalitegharị. Ibe a ga-ebugharị mgbe FreeTier Router lọghachiri.\",",
+    "\"updateNowTimeout\": \"FreeTier Router amalitegharịbeghị mgbe nkeji 5 gachara. Lelee ndekọ akpa watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"Etinyela ụdị FreeTier Router ọhụrụ.\","
+  ],
+  "client/src/i18n/locales/it.json": [
+    "\"desktopSessionFailed\": \"La dashboard non è riuscita ad accedere al server locale. Chiudi FreeTier Router e riaprilo.\"",
+    "\"startAtLoginHelp\": \"Avvia FreeTier Router automaticamente quando accedi al computer.\",",
+    "\"restartAfterUpdate\": \"Riavvia FreeTier Router al termine della build.\",",
+    "\"updateReadyHint\": \"Scaricato. FreeTier Router esegue il backup dei tuoi dati, si riavvia e apre la nuova versione.\",",
+    "\"updatingContainer\": \"Download della nuova immagine e riavvio in corso. La pagina si ricarica quando FreeTier Router torna disponibile.\",",
+    "\"updateNowTimeout\": \"FreeTier Router non si è riavviato dopo 5 minuti. Controlla i log del container watchtower.\"",
+    "\"usedScopeHint\": \"Solo richieste di chat, dall'inizio di questo mese solare, sommate su tutti i modelli della catena attiva, endpoint personalizzati inclusi. Il traffico inviato a un provider al di fuori di FreeTier Router non viene conteggiato.\",",
+    "\"newBuild\": \"È installata una versione più recente di FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/ja.json": [
+    "\"desktopSessionFailed\": \"ダッシュボードがローカルサーバーにサインインできませんでした。FreeTier Router を終了して開き直してください。\"",
+    "\"startAtLoginHelp\": \"コンピューターにサインインすると FreeTier Router を自動的に起動します。\",",
+    "\"restartAfterUpdate\": \"ビルド完了後にFreeTier Routerを再起動してください。\",",
+    "\"updateReadyHint\": \"ダウンロード完了。FreeTier Router はデータをバックアップしてから再起動し、新しいバージョンを開きます。\",",
+    "\"updatingContainer\": \"新しいイメージを取得して再起動しています。FreeTier Router が戻るとこのページは再読み込みされます。\",",
+    "\"updateNowTimeout\": \"5 分経っても FreeTier Router が再起動していません。watchtower コンテナのログを確認してください。\"",
+    "\"usedScopeHint\": \"今月（暦月）の開始以降のチャットリクエストのみを、アクティブなチェーン内のすべてのモデル（カスタムエンドポイントを含む）について合計しています。FreeTier Router を介さずにプロバイダーへ送信したトラフィックは含まれません。\",",
+    "\"newBuild\": \"新しいバージョンの FreeTier Router がインストールされています。\","
+  ],
+  "client/src/i18n/locales/ka.json": [
+    "\"desktopSessionFailed\": \"პანელმა ლოკალურ სერვერზე შესვლა ვერ შეძლო. დახურეთ FreeTier Router და ხელახლა გახსენით.\"",
+    "\"startAtLoginHelp\": \"კომპიუტერში შესვლისას FreeTier Router ავტომატურად გაშვდეს.\",",
+    "\"restartAfterUpdate\": \"ბილდის დასრულების შემდეგ გადატვირთეთ FreeTier Router.\",",
+    "\"updateReadyHint\": \"ჩამოიტვირთა. FreeTier Router ქმნის თქვენი მონაცემების სარეზერვო ასლს, გადაიტვირთება და გახსნის ახალ ვერსიას.\",",
+    "\"updatingContainer\": \"ახალი იმიჯის ჩამოტვირთვა და გადატვირთვა. გვერდი გადაიტვირთება, როცა FreeTier Router დაბრუნდება.\",",
+    "\"updateNowTimeout\": \"FreeTier Router 5 წუთის შემდეგაც არ გადაიტვირთა. შეამოწმეთ watchtower კონტეინერის ჟურნალები.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"დაყენებულია FreeTier Router-ის უფრო ახალი ვერსია.\","
+  ],
+  "client/src/i18n/locales/km.json": [
+    "\"desktopSessionFailed\": \"ផ្ទាំងគ្រប់គ្រងមិនអាចចូលទៅម៉ាស៊ីនមេមូលដ្ឋានបានទេ។ សូមបិទ FreeTier Router ហើយបើកវាឡើងវិញ។\"",
+    "\"startAtLoginHelp\": \"ចាប់ផ្តើម FreeTier Router ដោយស្វ័យប្រវត្តិ ពេលអ្នកចូលកុំព្យូទ័រ។\",",
+    "\"restartAfterUpdate\": \"ចាប់ផ្តើម FreeTier Router ឡើងវិញ បន្ទាប់ពីការបង្កើតបានបញ្ចប់។\",",
+    "\"updateReadyHint\": \"បានទាញយករួច។ FreeTier Router បម្រុងទុកទិន្នន័យរបស់អ្នក ចាប់ផ្ដើមឡើងវិញ ហើយបើកកំណែថ្មី។\",",
+    "\"updatingContainer\": \"កំពុងទាញរូបភាពថ្មី ហើយចាប់ផ្ដើមឡើងវិញ។ ទំព័រនេះនឹងផ្ទុកឡើងវិញពេល FreeTier Router ត្រឡប់មកវិញ។\",",
+    "\"updateNowTimeout\": \"FreeTier Router មិនទាន់ចាប់ផ្ដើមឡើងវិញក្រោយ ៥ នាទី។ ពិនិត្យកំណត់ហេតុរបស់ container watchtower។\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"កំណែថ្មីជាងរបស់ FreeTier Router ត្រូវបានដំឡើង។\","
+  ],
+  "client/src/i18n/locales/kn.json": [
+    "\"desktopSessionFailed\": \"ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಸ್ಥಳೀಯ ಸರ್ವರ್‌ಗೆ ಸೈನ್ ಇನ್ ಆಗಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. FreeTier Router ಅನ್ನು ಮುಚ್ಚಿ ಮತ್ತೆ ತೆರೆಯಿರಿ.\"",
+    "\"startAtLoginHelp\": \"ನಿಮ್ಮ ಕಂಪ್ಯೂಟರ್ಗೆ ಸೈನ್ ಇನ್ ಮಾಡಿದಾಗ FreeTier Router ಅನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಪ್ರಾರಂಭಿಸಿ.\",",
+    "\"restartAfterUpdate\": \"ಬಿಲ್ಡ್ ಪೂರ್ಣಗೊಂಡ ನಂತರ FreeTier Router ಅನ್ನು ಮರುಪ್ರಾರಂಭಿಸಿ.\",",
+    "\"updateReadyHint\": \"ಡೌನ್‌ಲೋಡ್ ಆಗಿದೆ. FreeTier Router ನಿಮ್ಮ ಡೇಟಾದ ಬ್ಯಾಕಪ್ ತೆಗೆದು, ಮರುಪ್ರಾರಂಭಿಸಿ ಹೊಸ ಆವೃತ್ತಿಯನ್ನು ತೆರೆಯುತ್ತದೆ.\",",
+    "\"updatingContainer\": \"ಹೊಸ ಇಮೇಜ್ ಎಳೆಯಲಾಗುತ್ತಿದೆ ಮತ್ತು ಮರುಪ್ರಾರಂಭಿಸಲಾಗುತ್ತಿದೆ. FreeTier Router ಮರಳಿದಾಗ ಈ ಪುಟ ಮರುಲೋಡ್ ಆಗುತ್ತದೆ.\",",
+    "\"updateNowTimeout\": \"5 ನಿಮಿಷಗಳ ನಂತರವೂ FreeTier Router ಮರುಪ್ರಾರಂಭವಾಗಿಲ್ಲ. watchtower ಕಂಟೇನರ್ ಲಾಗ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router ನ ಹೊಸ ಆವೃತ್ತಿ ಸ್ಥಾಪಿಸಲಾಗಿದೆ.\","
+  ],
+  "client/src/i18n/locales/ko.json": [
+    "\"desktopSessionFailed\": \"대시보드가 로컬 서버에 로그인하지 못했습니다. FreeTier Router를 종료한 뒤 다시 여세요.\"",
+    "\"startAtLoginHelp\": \"컴퓨터에 로그인하면 FreeTier Router를 자동으로 실행합니다.\",",
+    "\"restartAfterUpdate\": \"빌드가 완료되면 FreeTier Router를 다시 시작하세요.\",",
+    "\"updateReadyHint\": \"다운로드 완료. FreeTier Router가 데이터를 백업한 뒤 재시작하고 새 버전을 엽니다.\",",
+    "\"updatingContainer\": \"새 이미지를 받아 재시작하는 중입니다. FreeTier Router가 돌아오면 이 페이지가 새로고침됩니다.\",",
+    "\"updateNowTimeout\": \"5분이 지나도 FreeTier Router가 재시작되지 않았습니다. watchtower 컨테이너 로그를 확인하세요.\"",
+    "\"usedScopeHint\": \"이번 달(달력 기준) 시작 이후의 채팅 요청만, 활성 체인의 모든 모델(사용자 지정 엔드포인트 포함)에 대해 합산한 값입니다. FreeTier Router를 거치지 않고 제공자에 직접 보낸 트래픽은 포함되지 않습니다.\",",
+    "\"newBuild\": \"더 새로운 버전의 FreeTier Router가 설치되었습니다.\","
+  ],
+  "client/src/i18n/locales/lt.json": [
+    "\"desktopSessionFailed\": \"Valdymo skydeliui nepavyko prisijungti prie vietinio serverio. Uždarykite FreeTier Router ir atidarykite iš naujo.\"",
+    "\"startAtLoginHelp\": \"Automatiškai paleiskite FreeTier Router prisijungę prie kompiuterio.\",",
+    "\"restartAfterUpdate\": \"Baigę komponuoti paleiskite FreeTier Router iš naujo.\",",
+    "\"updateReadyHint\": \"Atsisiųsta. FreeTier Router padaro jūsų duomenų atsarginę kopiją, pasileidžia iš naujo ir atidaro naują versiją.\",",
+    "\"updatingContainer\": \"Atsisiunčiamas naujas atvaizdas ir paleidžiama iš naujo. Puslapis įsikels iš naujo, kai FreeTier Router grįš.\",",
+    "\"updateNowTimeout\": \"FreeTier Router per 5 minutes nepasileido iš naujo. Peržiūrėkite watchtower konteinerio žurnalus.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"Įdiegta naujesnė FreeTier Router versija.\","
+  ],
+  "client/src/i18n/locales/ml.json": [
+    "\"desktopSessionFailed\": \"ഡാഷ്‌ബോർഡിന് ലോക്കൽ സെർവറിൽ സൈൻ ഇൻ ചെയ്യാനായില്ല. FreeTier Router അടച്ച് വീണ്ടും തുറക്കുക.\"",
+    "\"startAtLoginHelp\": \"നിങ്ങൾ കമ്പ്യൂട്ടറിൽ പ്രവേശിക്കുമ്പോൾ FreeTier Router സ്വയമേവ സമാരംഭിക്കുക.\",",
+    "\"restartAfterUpdate\": \"ബിൽഡ് പൂർത്തിയായ ശേഷം FreeTier Router പുനരാരംഭിക്കുക.\",",
+    "\"updateReadyHint\": \"ഡൗൺലോഡ് ചെയ്തു. FreeTier Router നിങ്ങളുടെ ഡാറ്റ ബാക്കപ്പ് ചെയ്ത് റീസ്റ്റാർട്ട് ചെയ്ത് പുതിയ പതിപ്പ് തുറക്കും.\",",
+    "\"updatingContainer\": \"പുതിയ ഇമേജ് എടുത്ത് റീസ്റ്റാർട്ട് ചെയ്യുന്നു. FreeTier Router തിരിച്ചെത്തുമ്പോൾ ഈ പേജ് റീലോഡ് ചെയ്യും.\",",
+    "\"updateNowTimeout\": \"5 മിനിറ്റിനുശേഷവും FreeTier Router റീസ്റ്റാർട്ട് ആയില്ല. watchtower കണ്ടെയ്‌നറിന്റെ ലോഗുകൾ പരിശോധിക്കുക.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router-യുടെ പുതിയ പതിപ്പ് ഇൻസ്റ്റാൾ ചെയ്തിട്ടുണ്ട്.\","
+  ],
+  "client/src/i18n/locales/mr.json": [
+    "\"desktopSessionFailed\": \"डॅशबोर्ड लोकल सर्व्हरमध्ये साइन इन करू शकला नाही. FreeTier Router बंद करून पुन्हा उघडा.\"",
+    "\"startAtLoginHelp\": \"तुम्ही तुमच्या संगणकावर साइन इन केल्यावर FreeTier Router आपोआप लाँच करा.\",",
+    "\"restartAfterUpdate\": \"बिल्ड पूर्ण झाल्यानंतर FreeTier Router पुन्हा सुरू करा.\",",
+    "\"updateReadyHint\": \"डाउनलोड झाले. FreeTier Router तुमच्या डेटाचा बॅकअप घेते, रीस्टार्ट होते आणि नवीन आवृत्ती उघडते.\",",
+    "\"updatingContainer\": \"नवीन इमेज ओढली जात आहे आणि रीस्टार्ट होत आहे. FreeTier Router परत आल्यावर हे पेज रीलोड होईल.\",",
+    "\"updateNowTimeout\": \"५ मिनिटांनंतरही FreeTier Router रीस्टार्ट झाले नाही. watchtower कंटेनरचे लॉग तपासा.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router ची नवीन आवृत्ती इंस्टॉल झाली आहे.\","
+  ],
+  "client/src/i18n/locales/ms.json": [
+    "\"desktopSessionFailed\": \"Papan pemuka tidak dapat log masuk ke pelayan tempatan. Tutup FreeTier Router dan buka semula.\"",
+    "\"startAtLoginHelp\": \"Lancarkan FreeTier Router secara automatik apabila anda log masuk ke komputer anda.\",",
+    "\"restartAfterUpdate\": \"Mulakan semula FreeTier Router selepas binaan selesai.\",",
+    "\"updateReadyHint\": \"Selesai dimuat turun. FreeTier Router menyandarkan data anda, bermula semula dan membuka versi baharu.\",",
+    "\"updatingContainer\": \"Menarik imej baharu dan memulakan semula. Halaman ini dimuat semula apabila FreeTier Router kembali.\",",
+    "\"updateNowTimeout\": \"FreeTier Router belum bermula semula selepas 5 minit. Semak log kontena watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"Versi FreeTier Router yang lebih baharu telah dipasang.\","
+  ],
+  "client/src/i18n/locales/my.json": [
+    "\"desktopSessionFailed\": \"ဒက်ရှ်ဘုတ်သည် ဒေသတွင်းဆာဗာသို့ ဝင်ရောက်၍ မရပါ။ FreeTier Router ကို ပိတ်ပြီး ပြန်ဖွင့်ပါ။\"",
+    "\"startAtLoginHelp\": \"သင့်ကွန်ပျူတာသို့ အကောင့်ဝင်သည့်အခါ FreeTier Router ကို အလိုအလျောက် စတင်ပါ။\",",
+    "\"restartAfterUpdate\": \"build ပြီးဆုံးပြီးနောက် FreeTier Router ကို ပြန်လည်စတင်ပါ။\",",
+    "\"updateReadyHint\": \"ဒေါင်းလုဒ်ပြီးပါပြီ။ FreeTier Router သည် သင့်ဒေတာကို အရန်သိမ်းပြီး ပြန်စတင်ကာ ဗားရှင်းအသစ်ကို ဖွင့်ပါမည်။\",",
+    "\"updatingContainer\": \"image အသစ်ကို ဆွဲယူပြီး ပြန်စတင်နေသည်။ FreeTier Router ပြန်လာသောအခါ ဤစာမျက်နှာ ပြန်ဖွင့်ပါမည်။\",",
+    "\"updateNowTimeout\": \"၅ မိနစ်ကြာသော်လည်း FreeTier Router ပြန်မစတင်သေးပါ။ watchtower container ၏ မှတ်တမ်းများကို စစ်ဆေးပါ။\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router ဗားရှင်းအသစ် ထည့်သွင်းပြီးပါပြီ။\","
+  ],
+  "client/src/i18n/locales/ne.json": [
+    "\"desktopSessionFailed\": \"ड्यासबोर्डले लोकल सर्भरमा साइन इन गर्न सकेन। FreeTier Router बन्द गरेर फेरि खोल्नुहोस्।\"",
+    "\"startAtLoginHelp\": \"तपाईंले आफ्नो कम्प्युटरमा साइन इन गर्दा FreeTier Router स्वतः सुरु गर्नुहोस्।\",",
+    "\"restartAfterUpdate\": \"बिल्ड पूरा भएपछि FreeTier Router पुनः सुरु गर्नुहोस्।\",",
+    "\"updateReadyHint\": \"डाउनलोड भयो। FreeTier Router ले तपाईंको डेटाको ब्याकअप लिन्छ, पुनः सुरु हुन्छ र नयाँ संस्करण खोल्छ।\",",
+    "\"updatingContainer\": \"नयाँ इमेज तानिँदै र पुनः सुरु हुँदैछ। FreeTier Router फर्केपछि यो पेज पुनः लोड हुन्छ।\",",
+    "\"updateNowTimeout\": \"५ मिनेटपछि पनि FreeTier Router पुनः सुरु भएको छैन। watchtower कन्टेनरका लगहरू हेर्नुहोस्।\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router को नयाँ संस्करण इन्स्टल भएको छ।\","
+  ],
+  "client/src/i18n/locales/nl.json": [
+    "\"desktopSessionFailed\": \"Het dashboard kon niet inloggen op de lokale server. Sluit FreeTier Router af en open het opnieuw.\"",
+    "\"startAtLoginHelp\": \"Start FreeTier Router automatisch wanneer u zich bij uw computer aanmeldt.\",",
+    "\"restartAfterUpdate\": \"Start FreeTier Router opnieuw nadat de build is voltooid.\",",
+    "\"updateReadyHint\": \"Gedownload. FreeTier Router maakt een back-up van je gegevens, herstart en opent de nieuwe versie.\",",
+    "\"updatingContainer\": \"De nieuwe image wordt opgehaald en herstart. Deze pagina laadt opnieuw zodra FreeTier Router terug is.\",",
+    "\"updateNowTimeout\": \"FreeTier Router is na 5 minuten niet herstart. Bekijk de logs van de watchtower-container.\"",
+    "\"usedScopeHint\": \"Alleen chatverzoeken, vanaf het begin van deze kalendermaand, opgeteld over alle modellen in de actieve keten — aangepaste endpoints inbegrepen. Verkeer dat je buiten FreeTier Router om naar een provider stuurt, telt niet mee.\",",
+    "\"newBuild\": \"Er is een nieuwere versie van FreeTier Router geïnstalleerd.\","
+  ],
+  "client/src/i18n/locales/no.json": [
+    "\"desktopSessionFailed\": \"Dashbordet kunne ikke logge inn på den lokale serveren. Avslutt FreeTier Router og åpne det på nytt.\"",
+    "\"startAtLoginHelp\": \"Start FreeTier Router automatisk når du logger på datamaskinen.\",",
+    "\"restartAfterUpdate\": \"Start FreeTier Router på nytt etter at byggingen er fullført.\",",
+    "\"updateReadyHint\": \"Lastet ned. FreeTier Router tar sikkerhetskopi av dataene dine, starter på nytt og åpner den nye versjonen.\",",
+    "\"updatingContainer\": \"Henter det nye imaget og starter på nytt. Siden lastes inn på nytt når FreeTier Router er tilbake.\",",
+    "\"updateNowTimeout\": \"FreeTier Router har ikke startet på nytt etter 5 minutter. Sjekk loggene til watchtower-containeren.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"En nyere versjon av FreeTier Router er installert.\","
+  ],
+  "client/src/i18n/locales/or.json": [
+    "\"desktopSessionFailed\": \"ଡ୍ୟାସବୋର୍ଡ ଲୋକାଲ ସର୍ଭରରେ ସାଇନ ଇନ କରିପାରିଲା ନାହିଁ। FreeTier Router ବନ୍ଦ କରି ପୁଣି ଖୋଲନ୍ତୁ।\"",
+    "\"startAtLoginHelp\": \"ଆପଣ ଆପଣଙ୍କ କମ୍ପ୍ୟୁଟରରେ ସାଇନ୍ ଇନ୍ କଲାବେଳେ FreeTier Router କୁ ସ୍ୱୟଂଚାଳିତ ଭାବେ ଲଞ୍ଚ କରନ୍ତୁ।\",",
+    "\"restartAfterUpdate\": \"ବିଲ୍ଡ ସମ୍ପୂର୍ଣ୍ଣ ହେବା ପରେ FreeTier Router ପୁନଃ ଚାଲୁ କରନ୍ତୁ।\",",
+    "\"updateReadyHint\": \"ଡାଉନଲୋଡ୍ ହୋଇଗଲା। FreeTier Router ଆପଣଙ୍କ ଡାଟାର ବ୍ୟାକଅପ୍ ନେଇ, ପୁନଃ ଆରମ୍ଭ ହୋଇ ନୂଆ ସଂସ୍କରଣ ଖୋଲେ।\",",
+    "\"updatingContainer\": \"ନୂଆ ଇମେଜ୍ ଟାଣାଯାଉଛି ଏବଂ ପୁନଃ ଆରମ୍ଭ ହେଉଛି। FreeTier Router ଫେରିଲେ ଏହି ପୃଷ୍ଠା ପୁନଃ ଲୋଡ୍ ହେବ।\",",
+    "\"updateNowTimeout\": \"୫ ମିନିଟ ପରେ ମଧ୍ୟ FreeTier Router ପୁନଃ ଆରମ୍ଭ ହୋଇନାହିଁ। watchtower କଣ୍ଟେନରର ଲଗ୍ ଦେଖନ୍ତୁ।\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router ର ନୂଆ ସଂସ୍କରଣ ଇନଷ୍ଟଲ୍ ହୋଇଛି।\","
+  ],
+  "client/src/i18n/locales/pa.json": [
+    "\"desktopSessionFailed\": \"ਡੈਸ਼ਬੋਰਡ ਲੋਕਲ ਸਰਵਰ ਵਿੱਚ ਸਾਈਨ ਇਨ ਨਹੀਂ ਕਰ ਸਕਿਆ। FreeTier Router ਬੰਦ ਕਰਕੇ ਦੁਬਾਰਾ ਖੋਲ੍ਹੋ।\"",
+    "\"startAtLoginHelp\": \"ਜਦੋਂ ਤੁਸੀਂ ਆਪਣੇ ਕੰਪਿਊਟਰ ਵਿੱਚ ਸਾਈਨ ਇਨ ਕਰਦੇ ਹੋ ਤਾਂ FreeTier Router ਨੂੰ ਆਪਣੇ ਆਪ ਲਾਂਚ ਕਰੋ।\",",
+    "\"restartAfterUpdate\": \"ਬਿਲਡ ਪੂਰਾ ਹੋਣ ਤੋਂ ਬਾਅਦ FreeTier Router ਨੂੰ ਮੁੜ ਚਾਲੂ ਕਰੋ।\",",
+    "\"updateReadyHint\": \"ਡਾਊਨਲੋਡ ਹੋ ਗਿਆ। FreeTier Router ਤੁਹਾਡੇ ਡੇਟਾ ਦਾ ਬੈਕਅੱਪ ਲੈਂਦਾ ਹੈ, ਮੁੜ ਚਾਲੂ ਹੁੰਦਾ ਹੈ ਅਤੇ ਨਵਾਂ ਸੰਸਕਰਣ ਖੋਲ੍ਹਦਾ ਹੈ।\",",
+    "\"updatingContainer\": \"ਨਵੀਂ ਇਮੇਜ ਖਿੱਚੀ ਜਾ ਰਹੀ ਹੈ ਅਤੇ ਮੁੜ ਚਾਲੂ ਹੋ ਰਿਹਾ ਹੈ। FreeTier Router ਵਾਪਸ ਆਉਣ 'ਤੇ ਇਹ ਪੰਨਾ ਮੁੜ ਲੋਡ ਹੋਵੇਗਾ।\",",
+    "\"updateNowTimeout\": \"5 ਮਿੰਟ ਬਾਅਦ ਵੀ FreeTier Router ਮੁੜ ਚਾਲੂ ਨਹੀਂ ਹੋਇਆ। watchtower ਕੰਟੇਨਰ ਦੇ ਲੌਗ ਵੇਖੋ।\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router ਦਾ ਨਵਾਂ ਸੰਸਕਰਣ ਇੰਸਟਾਲ ਹੈ।\","
+  ],
+  "client/src/i18n/locales/pl.json": [
+    "\"desktopSessionFailed\": \"Panel nie mógł zalogować się do lokalnego serwera. Zamknij FreeTier Router i otwórz go ponownie.\"",
+    "\"startAtLoginHelp\": \"Automatycznie uruchamiaj FreeTier Router po zalogowaniu się do komputera.\",",
+    "\"restartAfterUpdate\": \"Uruchom ponownie FreeTier Router po zakończeniu kompilacji.\",",
+    "\"updateReadyHint\": \"Pobrano. FreeTier Router tworzy kopię zapasową danych, uruchamia się ponownie i otwiera nową wersję.\",",
+    "\"updatingContainer\": \"Pobieranie nowego obrazu i ponowne uruchamianie. Strona odświeży się, gdy FreeTier Router wróci.\",",
+    "\"updateNowTimeout\": \"FreeTier Router nie uruchomił się ponownie po 5 minutach. Sprawdź logi kontenera watchtower.\"",
+    "\"usedScopeHint\": \"Tylko żądania czatu od początku bieżącego miesiąca kalendarzowego, zsumowane dla wszystkich modeli w aktywnym łańcuchu — łącznie z własnymi endpointami. Ruch wysyłany do dostawcy z pominięciem FreeTier Router nie jest liczony.\",",
+    "\"newBuild\": \"Zainstalowano nowszą wersję FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/pt-BR.json": [
+    "\"desktopSessionFailed\": \"O painel não conseguiu entrar no servidor local. Feche o FreeTier Router e abra-o novamente.\"",
+    "\"startAtLoginHelp\": \"Inicie o FreeTier Router automaticamente ao entrar no seu computador.\",",
+    "\"restartAfterUpdate\": \"Reinicie o FreeTier Router após a conclusão da build.\",",
+    "\"updateReadyHint\": \"Baixada. O FreeTier Router faz backup dos seus dados, reinicia e abre a nova versão.\",",
+    "\"updatingContainer\": \"Baixando a nova imagem e reiniciando. Esta página recarrega quando o FreeTier Router voltar.\",",
+    "\"updateNowTimeout\": \"O FreeTier Router não reiniciou após 5 minutos. Verifique os logs do contêiner watchtower.\"",
+    "\"usedScopeHint\": \"Somente requisições de chat, desde o início deste mês civil, somadas em todos os modelos da cadeia ativa, incluindo endpoints personalizados. O tráfego enviado a um provedor fora do FreeTier Router não é contado.\",",
+    "\"newBuild\": \"Uma versão mais recente do FreeTier Router está instalada.\","
+  ],
+  "client/src/i18n/locales/pt-PT.json": [
+    "\"desktopSessionFailed\": \"O painel não conseguiu iniciar sessão no servidor local. Feche o FreeTier Router e volte a abri-lo.\"",
+    "\"startAtLoginHelp\": \"Inicie o FreeTier Router automaticamente quando iniciar sessão no computador.\",",
+    "\"restartAfterUpdate\": \"Reinicie o FreeTier Router após a conclusão da compilação.\",",
+    "\"updateReadyHint\": \"Transferida. O FreeTier Router faz uma cópia de segurança dos seus dados, reinicia e abre a nova versão.\",",
+    "\"updatingContainer\": \"A transferir a nova imagem e a reiniciar. Esta página recarrega quando o FreeTier Router voltar.\",",
+    "\"updateNowTimeout\": \"O FreeTier Router não reiniciou ao fim de 5 minutos. Verifique os registos do contentor watchtower.\"",
+    "\"usedScopeHint\": \"Apenas pedidos de chat, desde o início deste mês civil, somados em todos os modelos da cadeia ativa, incluindo endpoints personalizados. O tráfego enviado a um fornecedor fora do FreeTier Router não é contado.\",",
+    "\"newBuild\": \"Está instalada uma versão mais recente do FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/ro.json": [
+    "\"desktopSessionFailed\": \"Panoul de control nu s-a putut autentifica la serverul local. Închide FreeTier Router și deschide-l din nou.\"",
+    "\"startAtLoginHelp\": \"Lansați automat FreeTier Router când vă conectați la computer.\",",
+    "\"restartAfterUpdate\": \"Repornește FreeTier Router după finalizarea compilării.\",",
+    "\"updateReadyHint\": \"Descărcat. FreeTier Router face o copie de rezervă a datelor, repornește și deschide noua versiune.\",",
+    "\"updatingContainer\": \"Se descarcă noua imagine și se repornește. Pagina se reîncarcă când FreeTier Router revine.\",",
+    "\"updateNowTimeout\": \"FreeTier Router nu a repornit după 5 minute. Verifică jurnalele containerului watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"Este instalată o versiune mai nouă de FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/ru.json": [
+    "\"desktopSessionFailed\": \"Панель управления не смогла войти на локальный сервер. Закройте FreeTier Router и откройте его снова.\"",
+    "\"startAtLoginHelp\": \"Автоматически запускать FreeTier Router при входе в систему.\",",
+    "\"restartAfterUpdate\": \"Перезапустите FreeTier Router после завершения сборки.\",",
+    "\"updateReadyHint\": \"Загружено. FreeTier Router создаёт резервную копию данных, перезапускается и открывает новую версию.\",",
+    "\"updatingContainer\": \"Загружается новый образ и выполняется перезапуск. Страница перезагрузится, когда FreeTier Router вернётся.\",",
+    "\"updateNowTimeout\": \"FreeTier Router не перезапустился за 5 минут. Проверьте журналы контейнера watchtower.\"",
+    "\"usedScopeHint\": \"Только чат-запросы с начала текущего календарного месяца, суммарно по всем моделям активной цепочки, включая пользовательские эндпоинты. Трафик, отправленный провайдеру в обход FreeTier Router, не учитывается.\",",
+    "\"newBuild\": \"Установлена более новая версия FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/si.json": [
+    "\"desktopSessionFailed\": \"උපකරණ පුවරුවට දේශීය සේවාදායකයට පිවිසීමට නොහැකි විය. FreeTier Router වසා නැවත විවෘත කරන්න.\"",
+    "\"startAtLoginHelp\": \"ඔබ පරිගණකයට පුරනය වන විට FreeTier Router ස්වයංක්‍රීයව දියත් කරන්න.\",",
+    "\"restartAfterUpdate\": \"ගොඩනැගීම සම්පූර්ණ වූ පසු FreeTier Router නැවත ආරම්භ කරන්න.\",",
+    "\"updateReadyHint\": \"බාගත විය. FreeTier Router ඔබගේ දත්ත උපස්ථ කර, නැවත ආරම්භ වී නව අනුවාදය විවෘත කරයි.\",",
+    "\"updatingContainer\": \"නව image එක ලබාගෙන නැවත ආරම්භ කරමින්. FreeTier Router නැවත පැමිණි විට මෙම පිටුව නැවත පූරණය වේ.\",",
+    "\"updateNowTimeout\": \"මිනිත්තු 5කට පසුවත් FreeTier Router නැවත ආරම්භ වී නැත. watchtower container හි ලොග් පරීක්ෂා කරන්න.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router හි නවතම අනුවාදයක් ස්ථාපනය කර ඇත.\","
+  ],
+  "client/src/i18n/locales/sk.json": [
+    "\"desktopSessionFailed\": \"Ovládací panel sa nedokázal prihlásiť k lokálnemu serveru. Ukončite FreeTier Router a spustite ho znova.\"",
+    "\"startAtLoginHelp\": \"Automaticky spustite FreeTier Router po prihlásení sa do počítača.\",",
+    "\"restartAfterUpdate\": \"Reštartujte FreeTier Router po dokončení zostavovania.\",",
+    "\"updateReadyHint\": \"Stiahnuté. FreeTier Router zálohuje vaše údaje, reštartuje sa a otvorí novú verziu.\",",
+    "\"updatingContainer\": \"Sťahuje sa nový obraz a prebieha reštart. Stránka sa znova načíta, keď bude FreeTier Router späť.\",",
+    "\"updateNowTimeout\": \"FreeTier Router sa ani po 5 minútach nereštartoval. Skontrolujte logy kontajnera watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"Je nainštalovaná novšia verzia FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/sr.json": [
+    "\"desktopSessionFailed\": \"Контролна табла није успела да се пријави на локални сервер. Затворите FreeTier Router и поново га отворите.\"",
+    "\"startAtLoginHelp\": \"Аутоматски покрените FreeTier Router када се пријавите на рачунар.\",",
+    "\"restartAfterUpdate\": \"Поново покрените FreeTier Router након завршетка израде.\",",
+    "\"updateReadyHint\": \"Преузето. FreeTier Router прави резервну копију ваших података, поново се покреће и отвара нову верзију.\",",
+    "\"updatingContainer\": \"Преузима се нова слика и поново се покреће. Страница ће се поново учитати када се FreeTier Router врати.\",",
+    "\"updateNowTimeout\": \"FreeTier Router се није поново покренуо након 5 минута. Проверите логове контејнера watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"Инсталирана је новија верзија FreeTier Router-ја.\","
+  ],
+  "client/src/i18n/locales/sv.json": [
+    "\"desktopSessionFailed\": \"Instrumentpanelen kunde inte logga in på den lokala servern. Avsluta FreeTier Router och öppna det igen.\"",
+    "\"startAtLoginHelp\": \"Starta FreeTier Router automatiskt när du loggar in på datorn.\",",
+    "\"restartAfterUpdate\": \"Starta om FreeTier Router när bygget är klart.\",",
+    "\"updateReadyHint\": \"Hämtad. FreeTier Router säkerhetskopierar dina data, startar om och öppnar den nya versionen.\",",
+    "\"updatingContainer\": \"Hämtar den nya avbildningen och startar om. Sidan laddas om när FreeTier Router är tillbaka.\",",
+    "\"updateNowTimeout\": \"FreeTier Router har inte startat om efter 5 minuter. Kontrollera loggarna för watchtower-containern.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"En nyare version av FreeTier Router är installerad.\","
+  ],
+  "client/src/i18n/locales/sw.json": [
+    "\"desktopSessionFailed\": \"Dashibodi haikuweza kuingia kwenye seva ya ndani. Funga FreeTier Router kisha uifungue tena.\"",
+    "\"startAtLoginHelp\": \"Zindua FreeTier Router kiotomatiki unapoingia kwenye kompyuta yako.\",",
+    "\"restartAfterUpdate\": \"Anzisha upya FreeTier Router baada ya ujenzi kukamilika.\",",
+    "\"updateReadyHint\": \"Imepakuliwa. FreeTier Router huhifadhi nakala ya data yako, huanza upya na kufungua toleo jipya.\",",
+    "\"updatingContainer\": \"Inavuta picha mpya na kuanza upya. Ukurasa huu utapakia upya FreeTier Router itakaporudi.\",",
+    "\"updateNowTimeout\": \"FreeTier Router haijaanza upya baada ya dakika 5. Angalia kumbukumbu za kontena la watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"Toleo jipya la FreeTier Router limesakinishwa.\","
+  ],
+  "client/src/i18n/locales/ta.json": [
+    "\"desktopSessionFailed\": \"டாஷ்போர்டால் உள்ளூர் சேவையகத்தில் உள்நுழைய முடியவில்லை. FreeTier Router-ஐ மூடிவிட்டு மீண்டும் திறக்கவும்.\"",
+    "\"startAtLoginHelp\": \"உங்கள் கணினியில் உள்நுழையும்போது FreeTier Router ஐ தானாகத் தொடங்கவும்.\",",
+    "\"restartAfterUpdate\": \"உருவாக்கம் முடிந்ததும் FreeTier Router-ஐ மறுதொடக்கம் செய்யவும்.\",",
+    "\"updateReadyHint\": \"பதிவிறக்கப்பட்டது. FreeTier Router உங்கள் தரவைக் காப்புப்பிரதி எடுத்து, மறுதொடக்கம் செய்து புதிய பதிப்பைத் திறக்கும்.\",",
+    "\"updatingContainer\": \"புதிய image-ஐப் பெற்று மறுதொடக்கம் செய்கிறது. FreeTier Router திரும்பியதும் இந்தப் பக்கம் மீண்டும் ஏற்றப்படும்.\",",
+    "\"updateNowTimeout\": \"5 நிமிடங்களுக்குப் பிறகும் FreeTier Router மறுதொடக்கம் ஆகவில்லை. watchtower கொள்கலனின் பதிவுகளைப் பார்க்கவும்.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router-இன் புதிய பதிப்பு நிறுவப்பட்டுள்ளது.\","
+  ],
+  "client/src/i18n/locales/te.json": [
+    "\"desktopSessionFailed\": \"డాష్‌బోర్డ్ లోకల్ సర్వర్‌కు సైన్ ఇన్ కాలేకపోయింది. FreeTier Router ని మూసివేసి మళ్లీ తెరవండి.\"",
+    "\"startAtLoginHelp\": \"మీరు మీ కంప్యూటర్లో సైన్ ఇన్ చేసినప్పుడు FreeTier Router ని స్వయంచాలకంగా ప్రారంభించండి.\",",
+    "\"restartAfterUpdate\": \"బిల్డ్ పూర్తయిన తర్వాత FreeTier Routerని పునఃప్రారంభించండి.\",",
+    "\"updateReadyHint\": \"డౌన్‌లోడ్ అయింది. FreeTier Router మీ డేటాను బ్యాకప్ చేసి, రీస్టార్ట్ అయి కొత్త వెర్షన్‌ను తెరుస్తుంది.\",",
+    "\"updatingContainer\": \"కొత్త ఇమేజ్‌ను తెచ్చి రీస్టార్ట్ అవుతోంది. FreeTier Router తిరిగి వచ్చాక ఈ పేజీ రీలోడ్ అవుతుంది.\",",
+    "\"updateNowTimeout\": \"5 నిమిషాల తర్వాత కూడా FreeTier Router రీస్టార్ట్ కాలేదు. watchtower కంటైనర్ లాగ్‌లను చూడండి.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router యొక్క కొత్త వెర్షన్ ఇన్‌స్టాల్ అయింది.\","
+  ],
+  "client/src/i18n/locales/th.json": [
+    "\"desktopSessionFailed\": \"แดชบอร์ดไม่สามารถลงชื่อเข้าใช้เซิร์ฟเวอร์ในเครื่องได้ ปิด FreeTier Router แล้วเปิดใหม่อีกครั้ง\"",
+    "\"startAtLoginHelp\": \"เปิดใช้ FreeTier Router โดยอัตโนมัติเมื่อคุณลงชื่อเข้าใช้คอมพิวเตอร์ของคุณ\",",
+    "\"restartAfterUpdate\": \"รีสตาร์ต FreeTier Router หลังจากบิลด์เสร็จสิ้น\",",
+    "\"updateReadyHint\": \"ดาวน์โหลดแล้ว FreeTier Router จะสำรองข้อมูลของคุณ รีสตาร์ต และเปิดเวอร์ชันใหม่\",",
+    "\"updatingContainer\": \"กำลังดึงอิมเมจใหม่และรีสตาร์ต หน้านี้จะโหลดใหม่เมื่อ FreeTier Router กลับมา\",",
+    "\"updateNowTimeout\": \"FreeTier Router ยังไม่รีสตาร์ตหลังผ่านไป 5 นาที ตรวจสอบบันทึกของคอนเทนเนอร์ watchtower\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"ติดตั้ง FreeTier Router เวอร์ชันใหม่กว่าแล้ว\","
+  ],
+  "client/src/i18n/locales/tl.json": [
+    "\"desktopSessionFailed\": \"Hindi nakapag-sign in ang dashboard sa lokal na server. Isara ang FreeTier Router at buksan itong muli.\"",
+    "\"startAtLoginHelp\": \"Ilunsad ang FreeTier Router nang awtomatiko kapag nag-sign in ka sa iyong computer.\",",
+    "\"restartAfterUpdate\": \"I-restart ang FreeTier Router kapag natapos ang build.\",",
+    "\"updateReadyHint\": \"Na-download na. Iba-backup ng FreeTier Router ang iyong data, magre-restart, at bubuksan ang bagong bersyon.\",",
+    "\"updatingContainer\": \"Kinukuha ang bagong image at nagre-restart. Magre-reload ang page na ito kapag bumalik ang FreeTier Router.\",",
+    "\"updateNowTimeout\": \"Hindi pa nagre-restart ang FreeTier Router pagkalipas ng 5 minuto. Tingnan ang logs ng watchtower container.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"May mas bagong bersyon ng FreeTier Router na naka-install.\","
+  ],
+  "client/src/i18n/locales/tr.json": [
+    "\"desktopSessionFailed\": \"Kontrol paneli yerel sunucuya giriş yapamadı. FreeTier Router uygulamasını kapatıp yeniden açın.\"",
+    "\"startAtLoginHelp\": \"Bilgisayarınızda oturum açtığınızda FreeTier Router'yi otomatik olarak başlatın.\",",
+    "\"restartAfterUpdate\": \"Derleme tamamlandıktan sonra FreeTier Router'yi yeniden başlatın.\",",
+    "\"updateReadyHint\": \"İndirildi. FreeTier Router verilerinizi yedekler, yeniden başlar ve yeni sürümü açar.\",",
+    "\"updatingContainer\": \"Yeni imaj çekiliyor ve yeniden başlatılıyor. FreeTier Router geri geldiğinde bu sayfa yenilenecek.\",",
+    "\"updateNowTimeout\": \"FreeTier Router 5 dakika sonra hâlâ yeniden başlamadı. watchtower konteynerinin günlüklerine bakın.\"",
+    "\"usedScopeHint\": \"Yalnızca bu takvim ayının başından bu yana yapılan sohbet istekleri; etkin zincirdeki tüm modeller (özel uç noktalar dâhil) toplanır. FreeTier Router dışından sağlayıcıya gönderdiğiniz trafik sayılmaz.\",",
+    "\"newBuild\": \"FreeTier Router'nin daha yeni bir sürümü yüklü.\","
+  ],
+  "client/src/i18n/locales/uk.json": [
+    "\"desktopSessionFailed\": \"Панель керування не змогла увійти на локальний сервер. Закрийте FreeTier Router і відкрийте його знову.\"",
+    "\"startAtLoginHelp\": \"Автоматично запускати FreeTier Router під час входу в систему.\",",
+    "\"restartAfterUpdate\": \"Перезапустіть FreeTier Router після завершення збірки.\",",
+    "\"updateReadyHint\": \"Завантажено. FreeTier Router створює резервну копію даних, перезапускається й відкриває нову версію.\",",
+    "\"updatingContainer\": \"Завантажується новий образ і виконується перезапуск. Сторінка перезавантажиться, коли FreeTier Router повернеться.\",",
+    "\"updateNowTimeout\": \"FreeTier Router не перезапустився за 5 хвилин. Перегляньте журнали контейнера watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"Встановлено новішу версію FreeTier Router.\","
+  ],
+  "client/src/i18n/locales/ur.json": [
+    "\"desktopSessionFailed\": \"ڈیش بورڈ لوکل سرور میں سائن اِن نہیں کر سکا۔ FreeTier Router بند کر کے دوبارہ کھولیں۔\"",
+    "\"startAtLoginHelp\": \"جب آپ اپنے کمپیوٹر میں سائن ان کرتے ہیں تو FreeTier Router کو خودکار طور پر لانچ کریں۔\",",
+    "\"restartAfterUpdate\": \"بلڈ مکمل ہونے کے بعد FreeTier Router کو دوبارہ شروع کریں۔\",",
+    "\"updateReadyHint\": \"ڈاؤن لوڈ ہو گیا۔ FreeTier Router آپ کے ڈیٹا کا بیک اپ لیتا ہے، دوبارہ شروع ہوتا ہے اور نیا ورژن کھولتا ہے۔\",",
+    "\"updatingContainer\": \"نئی امیج کھینچی جا رہی ہے اور دوبارہ شروع ہو رہا ہے۔ FreeTier Router واپس آنے پر یہ صفحہ دوبارہ لوڈ ہوگا۔\",",
+    "\"updateNowTimeout\": \"5 منٹ بعد بھی FreeTier Router دوبارہ شروع نہیں ہوا۔ watchtower کنٹینر کے لاگز دیکھیں۔\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router کا نیا ورژن انسٹال ہو چکا ہے۔\","
+  ],
+  "client/src/i18n/locales/uz.json": [
+    "\"desktopSessionFailed\": \"Boshqaruv paneli lokal serverga kira olmadi. FreeTier Router dasturini yopib, qayta oching.\"",
+    "\"startAtLoginHelp\": \"Kompyuteringizga kirganingizda FreeTier Router avtomatik ravishda ishga tushsin.\",",
+    "\"restartAfterUpdate\": \"Build tugagach, FreeTier Router'ni qayta ishga tushiring.\",",
+    "\"updateReadyHint\": \"Yuklab olindi. FreeTier Router maʼlumotlaringizning zaxira nusxasini oladi, qayta ishga tushadi va yangi versiyani ochadi.\",",
+    "\"updatingContainer\": \"Yangi obraz yuklab olinmoqda va qayta ishga tushirilmoqda. FreeTier Router qaytganda bu sahifa qayta yuklanadi.\",",
+    "\"updateNowTimeout\": \"FreeTier Router 5 daqiqadan keyin ham qayta ishga tushmadi. watchtower konteyneri jurnallarini tekshiring.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"FreeTier Router ning yangiroq versiyasi o‘rnatilgan.\","
+  ],
+  "client/src/i18n/locales/vi.json": [
+    "\"desktopSessionFailed\": \"Bảng điều khiển không thể đăng nhập vào máy chủ cục bộ. Hãy thoát FreeTier Router và mở lại.\"",
+    "\"startAtLoginHelp\": \"Tự động khởi chạy FreeTier Router khi bạn đăng nhập vào máy tính.\",",
+    "\"restartAfterUpdate\": \"Khởi động lại FreeTier Router sau khi hoàn tất bản dựng.\",",
+    "\"updateReadyHint\": \"Đã tải xong. FreeTier Router sao lưu dữ liệu của bạn, khởi động lại và mở phiên bản mới.\",",
+    "\"updatingContainer\": \"Đang kéo image mới và khởi động lại. Trang này sẽ tải lại khi FreeTier Router hoạt động trở lại.\",",
+    "\"updateNowTimeout\": \"FreeTier Router chưa khởi động lại sau 5 phút. Hãy xem nhật ký của container watchtower.\"",
+    "\"usedScopeHint\": \"Chỉ tính các yêu cầu trò chuyện từ đầu tháng dương lịch này, cộng dồn trên mọi mô hình trong chuỗi đang hoạt động — bao gồm cả endpoint tùy chỉnh. Lưu lượng bạn gửi thẳng tới nhà cung cấp ngoài FreeTier Router không được tính.\",",
+    "\"newBuild\": \"Đã cài đặt phiên bản FreeTier Router mới hơn.\","
+  ],
+  "client/src/i18n/locales/yo.json": [
+    "\"desktopSessionFailed\": \"Dáṣíbọ́ọ̀dù kò lè wọlé sí olùpèsè agbègbè. Pa FreeTier Router, kí o sì tún ṣí i.\"",
+    "\"startAtLoginHelp\": \"Mu FreeTier Router ṣiṣẹ laifọwọyi nigbati o wọle si kọnputa rẹ.\",",
+    "\"restartAfterUpdate\": \"Tun FreeTier Router bẹ̀rẹ̀ lẹ́yìn tí ìkọ́lé bá parí.\",",
+    "\"updateReadyHint\": \"Ìgbàsílẹ̀ ti parí. FreeTier Router yóò ṣe àfẹ̀yìntì dátà rẹ, tún bẹ̀rẹ̀, yóò sì ṣí ẹ̀yà tuntun.\",",
+    "\"updatingContainer\": \"Ń fa àwòrán tuntun ó sì ń tún bẹ̀rẹ̀. Ojú-ìwé yìí yóò tún gbé nígbà tí FreeTier Router bá padà.\",",
+    "\"updateNowTimeout\": \"FreeTier Router kò tíì tún bẹ̀rẹ̀ lẹ́yìn ìṣẹ́jú 5. Ṣàyẹ̀wò àkọsílẹ̀ àpótí watchtower.\"",
+    "\"usedScopeHint\": \"Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeTier Router is not counted.\",",
+    "\"newBuild\": \"A ti fi ẹ̀yà FreeTier Router tuntun sí i.\","
+  ],
+  "client/src/i18n/locales/zh-CN.json": [
+    "\"desktopSessionFailed\": \"控制台无法登录本地服务器。请退出 FreeTier Router 并重新打开。\"",
+    "\"startAtLoginHelp\": \"在您登录计算机时自动启动 FreeTier Router。\",",
+    "\"restartAfterUpdate\": \"构建完成后重启 FreeTier Router。\",",
+    "\"updateReadyHint\": \"已下载。FreeTier Router 会先备份你的数据，然后重启并打开新版本。\",",
+    "\"updatingContainer\": \"正在拉取新镜像并重启。FreeTier Router 恢复后此页面会自动重新加载。\",",
+    "\"updateNowTimeout\": \"5 分钟后 FreeTier Router 仍未重启。请查看 watchtower 容器的日志。\"",
+    "\"usedScopeHint\": \"仅统计本自然月内的聊天请求，覆盖当前链路中的所有模型（包括自定义端点）。绕过 FreeTier Router 直接发往服务商的流量不计入。\",",
+    "\"newBuild\": \"已安装更新版本的 FreeTier Router。\","
+  ],
+  "client/src/i18n/locales/zh-TW.json": [
+    "\"desktopSessionFailed\": \"儀表板無法登入本機伺服器。請結束 FreeTier Router 並重新開啟。\"",
+    "\"startAtLoginHelp\": \"在您登入電腦時自動啟動 FreeTier Router。\",",
+    "\"restartAfterUpdate\": \"建置完成後重新啟動 FreeTier Router。\",",
+    "\"updateReadyHint\": \"已下載。FreeTier Router 會先備份你的資料，然後重新啟動並開啟新版本。\",",
+    "\"updatingContainer\": \"正在拉取新映像並重新啟動。FreeTier Router 恢復後此頁面會自動重新載入。\",",
+    "\"updateNowTimeout\": \"5 分鐘後 FreeTier Router 仍未重新啟動。請查看 watchtower 容器的記錄。\"",
+    "\"usedScopeHint\": \"僅統計本月內的聊天請求，涵蓋目前鏈路中的所有模型（包含自訂端點）。繞過 FreeTier Router 直接送往服務商的流量不計入。\",",
+    "\"newBuild\": \"已安裝較新版本的 FreeTier Router。\","
+  ],
+  "client/src/lib/updates.ts": [
+    "export const RELEASES_URL = 'https://github.com/viraj-s15/freetier-router/releases/latest'"
+  ],
+  "desktop/electron-builder.yml": [
+    "appId: io.github.viraj-s15.freetier-router",
+    "productName: FreeTier Router",
+    "artifactName: \"FreeTierRouter-${version}.${ext}\"",
+    "owner: viraj-s15",
+    "repo: freetier-router",
+    "artifactName: \"FreeTierRouter-${version}-macos-${arch}.${ext}\"",
+    "# electron-builder's default NSIS name has spaces (\"FreeTier Router Setup x.y.z.exe\")",
+    "artifactName: \"FreeTierRouter-Setup-${version}.${ext}\""
+  ],
+  "desktop/scripts/after-pack-linux-sandbox.mjs": [
+    "// chmod here is what the installed /opt/FreeTier Router/chrome-sandbox inherits."
+  ],
+  "desktop/scripts/smoke-win-gpu-sandbox.ps1": [
+    "$userData = Join-Path $env:APPDATA 'FreeTier Router'",
+    "Get-Process -Name 'FreeTier Router' -ErrorAction SilentlyContinue | Stop-Process -Force",
+    "if ($up) { Start-Sleep -Seconds 20; $up = (Test-Up) -and (Get-Process -Name 'FreeTier Router' -ErrorAction SilentlyContinue) }",
+    "if (-not $up) { throw \"${label}: FreeTier Router was not up and serving on 127.0.0.1:31415\" }",
+    "$broken = Join-Path $env:RUNNER_TEMP 'gpu-acl-repro\\FreeTier Router'",
+    "Assert-Launches (Join-Path $broken 'FreeTier Router.exe') 'broken-ACL portable copy'",
+    "$setup = Get-ChildItem -Path $Dist -Filter 'FreeTierRouter-Setup-*.exe' | Select-Object -First 1",
+    "if (-not $setup) { throw \"no FreeTierRouter-Setup-*.exe in $Dist\" }",
+    "$exe = Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA 'Programs') -Recurse -Filter 'FreeTier Router.exe' -ErrorAction SilentlyContinue | Select-Object -First 1",
+    "if (-not $exe) { throw 'FreeTier Router.exe not found under %LOCALAPPDATA%\\Programs after install' }"
+  ],
+  "desktop/src/__tests__/updater-artifact-names.test.ts": [
+    "expect(expand(config.nsis.artifactName)).toBe('FreeTierRouter-Setup-1.2.3.exe');",
+    "expect(expand(config.mac.artifactName, arch, ext)).toBe(`FreeTierRouter-1.2.3-macos-${arch}.${ext}`);"
+  ],
+  "desktop/src/i18n.ts": [
+    "tooltip: 'FreeTier Router — local LLM router',",
+    "quitApp: 'Quit FreeTier Router',",
+    "upToDate: \"FreeTier Router v{version} is the latest version.\",",
+    "updateAvailable: \"FreeTier Router v{version} is available\",",
+    "updateReadyTitle: \"FreeTier Router v{version} is ready to install\",",
+    "updateReadyBody: \"Restart FreeTier Router to finish updating. It also installs the next time you quit.\",",
+    "tooltip: 'FreeTier Router — 本地 LLM 路由器',",
+    "quitApp: '退出 FreeTier Router',",
+    "upToDate: \"FreeTier Router v{version} 已是最新版本。\",",
+    "updateAvailable: \"FreeTier Router v{version} 可用\",",
+    "updateReadyTitle: \"FreeTier Router v{version} 已可安装\",",
+    "updateReadyBody: \"重启 FreeTier Router 以完成更新。下次退出时也会自动安装。\",",
+    "tooltip: 'FreeTier Router — routeur LLM local',",
+    "quitApp: 'Quitter FreeTier Router',",
+    "upToDate: \"FreeTier Router v{version} est la dernière version.\",",
+    "updateAvailable: \"FreeTier Router v{version} est disponible\",",
+    "updateReadyTitle: \"FreeTier Router v{version} est prête à être installée\",",
+    "updateReadyBody: \"Redémarrez FreeTier Router pour terminer la mise à jour. Elle s’installe aussi à la prochaine fermeture.\",",
+    "tooltip: 'FreeTier Router — enrutador LLM local',",
+    "quitApp: 'Salir de FreeTier Router',",
+    "upToDate: \"FreeTier Router v{version} es la versión más reciente.\",",
+    "updateAvailable: \"FreeTier Router v{version} está disponible\",",
+    "updateReadyTitle: \"FreeTier Router v{version} está lista para instalarse\",",
+    "updateReadyBody: \"Reinicia FreeTier Router para terminar de actualizar. También se instala la próxima vez que salgas.\",",
+    "tooltip: 'FreeTier Router — roteador LLM local',",
+    "quitApp: 'Sair do FreeTier Router',",
+    "upToDate: \"FreeTier Router v{version} é a versão mais recente.\",",
+    "updateAvailable: \"FreeTier Router v{version} está disponível\",",
+    "updateReadyTitle: \"FreeTier Router v{version} está pronto para instalar\",",
+    "updateReadyBody: \"Reinicie o FreeTier Router para concluir a atualização. Ela também é instalada na próxima vez que você sair.\",",
+    "tooltip: 'FreeTier Router — router LLM locale',",
+    "quitApp: 'Esci da FreeTier Router',",
+    "upToDate: \"FreeTier Router v{version} è la versione più recente.\",",
+    "updateAvailable: \"FreeTier Router v{version} è disponibile\",",
+    "updateReadyTitle: \"FreeTier Router v{version} è pronto per l’installazione\",",
+    "updateReadyBody: \"Riavvia FreeTier Router per completare l’aggiornamento. Viene installato anche alla prossima chiusura.\","
+  ],
+  "desktop/src/main.ts": [
+    "app.setName('FreeTier Router');",
+    "app.setPath('userData', path.join(app.getPath('appData'), 'FreeTier Router'));",
+    "message: 'Expose FreeTier Router to your local network?',",
+    "title: 'FreeTier Router has no menu-bar icon',",
+    "message: 'macOS is not showing the FreeTier Router menu-bar icon.',",
+    "'To bring it back: System Settings > Menu Bar, find FreeTier Router and set it ' +",
+    "'Until then, relaunching FreeTier Router from Finder opens the dashboard.',",
+    "console.log(`[desktop] FreeTier Router running on http://${host}:${port}${cfg.lanAccess ? ' (LAN access enabled)' : ''}`);",
+    "'FreeTier Router failed to start',"
+  ],
+  "desktop/src/preload.ts": [
+    "// viraj-s15/freetier-router — the feed URL and signature checks live in the main"
+  ],
+  "desktop/src/updater.ts": [
+    "const RELEASES_URL = 'https://github.com/viraj-s15/freetier-router/releases/latest';"
+  ],
+  "desktop/src/window.ts": [
+    "title: 'FreeTier Router',"
+  ],
+  "docker-compose.yml": [
+    "image: ghcr.io/viraj-s15/freetier-router:latest"
+  ],
+  "package-lock.json": [
+    "\"name\": \"freetier-router\",",
+    "\"freetier-router\": \"dist/index.js\"",
+    "\"node_modules/freetier-router\": {"
+  ],
+  "server/src/__tests__/routes/update-release.test.ts": [
+    "const RELEASE_URL = 'https://api.github.com/repos/viraj-s15/freetier-router/releases/latest';",
+    "const RELEASES_PAGE = 'https://github.com/viraj-s15/freetier-router/releases';"
+  ],
+  "server/src/__tests__/routes/update.test.ts": [
+    "`https://api.github.com/repos/viraj-s15/freetier-router/compare/${LOCAL_SHA}...main`,",
+    "? response({ tag_name: 'v0.12.0', html_url: 'https://github.com/viraj-s15/freetier-router/releases/tag/v0.12.0' })",
+    "html_url: 'https://github.com/viraj-s15/freetier-router/releases/tag/v0.11.0',",
+    "`https://api.github.com/repos/viraj-s15/freetier-router/compare/${LOCAL_SHA}...v0.11.0`,",
+    "html_url: 'https://github.com/viraj-s15/freetier-router/releases/tag/v0.12.0',",
+    "'https://github.com/viraj-s15/freetier-router/commits/main.atom',"
+  ],
+  "server/src/routes/update.ts": [
+    "const REPOSITORY = 'viraj-s15/freetier-router';"
+  ]
+}
