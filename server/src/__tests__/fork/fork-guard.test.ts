@@ -82,6 +82,7 @@ describe('discovered-model checks', () => {
     ['server/src/lib/fallback-loop.ts', 'noteDiscoveredModelSuccess(route);'],
     ['server/src/services/catalog-sync.ts', 'afterCatalogApply(db, catalog, applyCatalogInner(db, catalog))'],
     ['server/src/routes/proxy.ts', "discoveredDisableReason(m.id) ?? 'disabled'"],
+    ['server/vitest.config.ts', "BUILTIN_MODEL_DISCOVERY: 'off'"],
   ])('keep the hook in %s: %s', (file, line) => {
     expect(read(file)).toContain(line);
   });

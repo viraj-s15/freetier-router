@@ -28,6 +28,7 @@ The chat checks use two free-tier requests. Add `--no-chat` to skip them. Add `-
 - the discovery defaults (`auto`, every 6 hours, 10 rpm and 250 a day),
 - a working model lister for each provider in `FREE_POLICIES`,
 - the port 6969 setting in `opencode.json` and the `freetier-router` CLI name,
-- each branded line in `rebrand-manifest.json`.
+- each branded line in `rebrand-manifest.json`,
+- each fork edit in an upstream file, such as the hooks in `fallback-loop.ts` and `BUILTIN_MODEL_DISCOVERY: 'off'` in `server/vitest.config.ts`. `AGENTS.md` lists each edit and why it is there.
 
 If you add a feature, add its test file and its test count to `scripts/fork/fork-tests.json`. The guard checks the list, and the sync script runs every file in it as its own step. If you rebrand more text on purpose, run `node scripts/fork/gen-rebrand-manifest.mjs` to record the new lines.

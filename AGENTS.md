@@ -1,6 +1,6 @@
 # Agent rules for FreeTier Router
 
-This repo is a fork of [FreeLLMAPI](https://github.com/tashfeenahmed/freellmapi). The fork's features are built-in model discovery for every provider, the free policy in `server/src/services/free-policy.ts`, the `catalog_removed` tombstone and the FreeTier Router rebrand. The live router runs from `server/dist` on port 6969, and the pi agent and `ftr` use it.
+This repo is a fork of [FreeLLMAPI](https://github.com/tashfeenahmed/freellmapi). The fork's features are built-in model discovery for every provider, the free policy in `server/src/services/free-policy.ts`, the `catalog_removed` tombstone, the health checks for discovered models in `server/src/services/discovered-model-*.ts` and the FreeTier Router rebrand. The live router runs from `server/dist` on port 6969, and the pi agent and `ftr` use it.
 
 ## Sync with upstream
 
@@ -23,8 +23,19 @@ Obey these rules during a sync:
 - Don't add fork files to upstream files when a new file can do the job, because each line in an upstream file can conflict on the next sync.
 - If the restart fails, the script rolls back on its own. Tell the user, and don't start the router by hand on a broken build.
 
+## Fork edits in upstream files
+
+The fork keeps its code in its own files, but these upstream files carry small fork edits. A sync can conflict on them, or drop them with no conflict. The fork guard checks that each one is still there. If upstream rewrites the code around an edit, put the edit back in the new code, and don't delete it.
+
+- `server/src/lib/fallback-loop.ts`: `noteDiscoveredModelFailure(...)` after `noteModelRetirementSignal(...)`, and `noteDiscoveredModelSuccess(route)` after `clearModelFailure(route)`. They feed the rule that turns off a discovered model after 3 requests with a 403 or 404 in a day.
+- `server/src/services/catalog-sync.ts`: `applyCatalog` passes its result through `afterCatalogApply`, so a discovered model that the catalog adopts while it waits for its probe turns on in the same sync.
+- `server/src/routes/proxy.ts`: `/v1/models` shows `discoveredDisableReason(m.id) ?? 'disabled'`, so a client sees `probe_failed` or `auto_disabled`.
+- `server/vitest.config.ts`: `BUILTIN_MODEL_DISCOVERY: 'off'` in the test env. Each key save starts a background discovery pass. In tests, that pass sent `/models` and probe calls into other tests' `fetch` mocks, and the fusion tests failed at random on CI. Keep it off. The discovery tests set or clear the variable themselves, so they still test `auto`.
+- Also, `server/src/services/builtin-model-discovery.ts` and the README are fork files that started as upstream files, so they conflict often. Keep the fork's logic in them.
+
 ## After you add a fork feature
 
 1. Put its tests in a new test file.
 2. Add that file and its test count to `scripts/fork/fork-tests.json`. The fork guard checks the list, and the sync script runs every file in it.
-3. Run `scripts/fork/sync-upstream.sh --check` to check the feature against the live setup.
+3. If the feature needs an edit in an upstream file, keep it to one line. Add the file and the reason to "Fork edits in upstream files", and add the line to the hook check in `server/src/__tests__/fork/fork-guard.test.ts`.
+4. Run `scripts/fork/sync-upstream.sh --check` to check the feature against the live setup.
