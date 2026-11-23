@@ -13,6 +13,8 @@ import {
   modelLister,
 } from '../../services/builtin-model-discovery.js';
 import { FREE_POLICIES } from '../../services/free-policy.js';
+import { getDb, initDb } from '../../db/index.js';
+import { discoveredChecksMode, startDiscoveredModelChecks } from '../../services/discovered-model-checks.js';
 
 // freetier-router: checks that an upstream sync keeps the fork's features.
 // The feature tests live in the files that FORK_TEST_FILES lists. This file
@@ -23,12 +25,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..
 const read = (file: string) => readFileSync(join(ROOT, file), 'utf8');
 
 // The minimum counts stop a merge from emptying a test file without notice.
-const FORK_TEST_FILES: Record<string, number> = {
-  'server/src/__tests__/services/free-policy.test.ts': 17,
-  'server/src/__tests__/services/builtin-model-discovery.test.ts': 33,
-  'server/src/__tests__/services/catalog-sync-discovered.test.ts': 10,
-  'server/src/__tests__/routes/builtin-model-discovery.test.ts': 10,
-};
+// scripts/fork/sync-upstream.sh reads the same list and runs these files as
+// their own step, so the list lives in one JSON file.
+const FORK_TEST_FILES = JSON.parse(read('scripts/fork/fork-tests.json')) as Record<string, number>;
 
 describe('fork test files', () => {
   for (const [file, min] of Object.entries(FORK_TEST_FILES)) {
@@ -59,6 +58,32 @@ describe('built-in model discovery defaults', () => {
   it('gives a discovered model limits of 10 rpm and 250 a day', () => {
     expect(DISCOVERED_RPM_LIMIT).toBe(10);
     expect(DISCOVERED_RPD_LIMIT).toBe(250);
+  });
+});
+
+describe('discovered-model checks', () => {
+  const saved = { ...process.env };
+  afterEach(() => { process.env = { ...saved }; });
+
+  it('are on by default', () => {
+    delete process.env.DISCOVERED_MODEL_CHECKS;
+    expect(discoveredChecksMode()).toBe('on');
+  });
+
+  it('create the discovered_model_checks table at startup after initDb', () => {
+    initDb(':memory:');
+    startDiscoveredModelChecks(getDb(), true);
+    expect(getDb().prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'discovered_model_checks'").get()).toBeTruthy();
+  });
+
+  // These hooks sit in upstream files, so a merge can drop them without a conflict.
+  it.each([
+    ['server/src/lib/fallback-loop.ts', 'noteDiscoveredModelFailure(route, err, getRequestTrace());'],
+    ['server/src/lib/fallback-loop.ts', 'noteDiscoveredModelSuccess(route);'],
+    ['server/src/services/catalog-sync.ts', 'afterCatalogApply(db, catalog, applyCatalogInner(db, catalog))'],
+    ['server/src/routes/proxy.ts', "discoveredDisableReason(m.id) ?? 'disabled'"],
+  ])('keep the hook in %s: %s', (file, line) => {
+    expect(read(file)).toContain(line);
   });
 });
 

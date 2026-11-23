@@ -22,6 +22,7 @@ import {
 } from './model-state.js';
 import { ensureAllModelsInProfiles } from './profile-models.js';
 import { applyKeylessDefaults } from './keyless-defaults.js';
+import { afterCatalogApply } from './discovered-model-checks.js';
 
 // Generative-media modalities are routed into the separate media_models table
 // (see services/media.ts), never into the chat `models` table.
@@ -517,7 +518,7 @@ export function applyCatalog(db: Db, catalog: Catalog): NonNullable<SyncResult['
   // own commit + fsync executed on the event loop. On slow storage that made
   // the 12-hourly sync freeze every in-flight request — including the 3-query
   // profile-activate POST — for minutes.
-  return db.transaction(() => applyCatalogInner(db, catalog))();
+  return db.transaction(() => afterCatalogApply(db, catalog, applyCatalogInner(db, catalog)))();
 }
 
 /**

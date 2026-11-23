@@ -60,6 +60,7 @@ import { benchForTools, clearToolRejections, noteToolRejection, toolCapabilityKe
 import { parseProviderReportedSize } from './provider-size-parser.js';
 import { checkKeyHealth, markKeyHealthyFromRequest } from '../services/health.js';
 import { noteModelRetirementSignal } from '../services/model-retirement.js';
+import { noteDiscoveredModelFailure, noteDiscoveredModelSuccess } from '../services/discovered-model-failures.js';
 import { getDb, getSetting } from '../db/index.js';
 import { newBreaker, recordBreakerFailure } from './guardrails.js';
 import { getRequestTrace, newRequestTrace, runWithRequestTrace, type AttemptOutcome, type AttemptTraceRecord, type RequestTrace } from './attempt-trace.js';
@@ -539,6 +540,7 @@ export function recordRetryableFailure(route: RouteResult, err: any, state: Fall
   // The trace object identifies the request, so one request's failover across
   // sibling keys counts as the single observation it is.
   noteModelRetirementSignal(route, err, getRequestTrace());
+  noteDiscoveredModelFailure(route, err, getRequestTrace());
   // Provider-reported request size (#507): if the just-failed attempt was a
   // size-related rejection that names the request's real token count, latch it
   // onto the request state. The route() closure on the next attempt picks it
@@ -772,6 +774,7 @@ export function recordUpstreamSuccess(route: RouteResult, rateLimitTokens: numbe
   // A served request is the strongest possible evidence the model works, so
   // clear any model-level failure streak that could bench it later.
   clearModelFailure(route);
+  noteDiscoveredModelSuccess(route);
   // A served request is the strongest possible evidence the key works, so clear
   // any stale 'error' status left by an earlier transport blip instead of waiting
   // for the next health pass to make the key routable again.

@@ -32,6 +32,7 @@ const ORIGINAL_MODE = process.env.BUILTIN_MODEL_DISCOVERY;
 const ORIGINAL_PATTERNS = process.env.CUSTOM_MODEL_SYNC_FREE_PATTERNS;
 const ORIGINAL_INTERVAL = process.env.BUILTIN_MODEL_DISCOVERY_INTERVAL_MS;
 const ORIGINAL_CUSTOM_INTERVAL = process.env.CUSTOM_MODEL_SYNC_INTERVAL_MS;
+const ORIGINAL_CHECKS = process.env.DISCOVERED_MODEL_CHECKS;
 
 function restoreEnv(name: string, value: string | undefined): void {
   if (value === undefined) delete process.env[name];
@@ -114,6 +115,7 @@ describe('built-in model discovery', () => {
     delete process.env.CUSTOM_MODEL_SYNC_FREE_PATTERNS;
     delete process.env.BUILTIN_MODEL_DISCOVERY_INTERVAL_MS;
     delete process.env.CUSTOM_MODEL_SYNC_INTERVAL_MS;
+    delete process.env.DISCOVERED_MODEL_CHECKS;
     initDb(':memory:');
     resetBuiltinDiscoveryThrottle();
   });
@@ -125,6 +127,7 @@ describe('built-in model discovery', () => {
     restoreEnv('CUSTOM_MODEL_SYNC_FREE_PATTERNS', ORIGINAL_PATTERNS);
     restoreEnv('BUILTIN_MODEL_DISCOVERY_INTERVAL_MS', ORIGINAL_INTERVAL);
     restoreEnv('CUSTOM_MODEL_SYNC_INTERVAL_MS', ORIGINAL_CUSTOM_INTERVAL);
+    restoreEnv('DISCOVERED_MODEL_CHECKS', ORIGINAL_CHECKS);
   });
 
   describe('mode', () => {
@@ -227,14 +230,14 @@ describe('built-in model discovery', () => {
   });
 
   describe('registration', () => {
-    it('writes discovered rows with default limits at the end of the chain', () => {
+    it('writes discovered rows with default limits at the end of the chain, off until a probe', () => {
       const db = getDb();
       const before = (db.prepare('SELECT COALESCE(MAX(priority), 0) AS m FROM fallback_config').get() as { m: number }).m;
       const result = registerDiscoveredModels(db, 'groq', [{ modelId: 'brand-new', contextWindow: 65536 }], { explicit: false });
       expect(result.created).toEqual(['brand-new']);
       const [row] = rows('groq', 'discovered');
       expect(row).toMatchObject({
-        model_id: 'brand-new', enabled: 1, key_id: null,
+        model_id: 'brand-new', enabled: 0, key_id: null,
         rpm_limit: DISCOVERED_RPM_LIMIT, rpd_limit: DISCOVERED_RPD_LIMIT, tpm_limit: null, tpd_limit: null,
       });
       expect(DISCOVERED_RPM_LIMIT).toBe(10);
@@ -369,7 +372,7 @@ describe('built-in model discovery', () => {
       await triggerBuiltinModelDiscovery(getDb(), 'sealion', 'healthy');
       expect(rows('sealion', 'discovered').map(r => r.model_id)).toEqual(['aisingapore/Qwen-SEA-LION-v4.5-27B-IT']);
       expect(triggerBuiltinModelDiscovery(getDb(), 'sealion', 'healthy')).toBeNull();
-      expect(mock).toHaveBeenCalledTimes(1);
+      expect(mock.mock.calls.filter(c => String(c[0]).endsWith('/models'))).toHaveLength(1);
     });
   });
 
@@ -386,7 +389,7 @@ describe('built-in model discovery', () => {
         id: listedId, source: 'catalog', display_name: 'listed (catalog)', rpm_limit: 30, rpd_limit: 1000,
       });
       expect(groq.find(r => r.model_id === 'unlisted')).toMatchObject({
-        source: 'discovered', rpm_limit: DISCOVERED_RPM_LIMIT, rpd_limit: DISCOVERED_RPD_LIMIT, enabled: 1,
+        source: 'discovered', rpm_limit: DISCOVERED_RPM_LIMIT, rpd_limit: DISCOVERED_RPD_LIMIT, enabled: 0,
       });
     });
 
@@ -398,6 +401,8 @@ describe('built-in model discovery', () => {
     });
 
     it('keeps a local disable when the catalog adopts a discovered row', () => {
+      // With the checks on, a new row is already off, so the disable is tested on a row that started on.
+      process.env.DISCOVERED_MODEL_CHECKS = 'off';
       const db = getDb();
       registerDiscoveredModels(db, 'groq', [{ modelId: 'listed' }], { explicit: false });
       db.prepare("UPDATE models SET enabled = 0 WHERE platform = 'groq' AND model_id = 'listed'").run();

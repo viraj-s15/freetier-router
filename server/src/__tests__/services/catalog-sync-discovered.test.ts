@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { getDb, initDb } from '../../db/index.js';
 import { applyCatalog } from '../../services/catalog-sync.js';
 import { registerDiscoveredModels } from '../../services/builtin-model-discovery.js';
@@ -47,7 +47,12 @@ function row(platform: string, modelId: string) {
 let baseline: AnyCatalog['models'] = [];
 
 describe('catalog sync and discovered models', () => {
+  afterEach(() => {
+    delete process.env.DISCOVERED_MODEL_CHECKS;
+  });
+
   beforeEach(() => {
+    delete process.env.DISCOVERED_MODEL_CHECKS;
     initDb(':memory:');
     baseline = (getDb().prepare("SELECT platform, model_id FROM models WHERE source = 'catalog'").all() as Array<{ platform: string; model_id: string }>)
       .map(r => catalogModel(r.platform, r.model_id));
@@ -69,6 +74,8 @@ describe('catalog sync and discovered models', () => {
   });
 
   it('keeps an operator disable when it adopts a discovered model', () => {
+    // With the checks on, a new row is already off, so the disable is tested on a row that started on.
+    process.env.DISCOVERED_MODEL_CHECKS = 'off';
     const db = getDb();
     registerDiscoveredModels(db, 'groq', [{ modelId: 'new-model' }], { explicit: false });
     db.prepare("UPDATE models SET enabled = 0 WHERE platform = 'groq' AND model_id = 'new-model'").run();

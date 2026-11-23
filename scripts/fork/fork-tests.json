@@ -1,0 +1,9 @@
+{
+  "server/src/__tests__/services/free-policy.test.ts": 17,
+  "server/src/__tests__/services/builtin-model-discovery.test.ts": 33,
+  "server/src/__tests__/services/catalog-sync-discovered.test.ts": 10,
+  "server/src/__tests__/routes/builtin-model-discovery.test.ts": 10,
+  "server/src/__tests__/services/discovered-model-checks.test.ts": 22,
+  "server/src/__tests__/services/discovered-model-probe.test.ts": 24,
+  "server/src/__tests__/services/discovered-model-failures.test.ts": 15
+}

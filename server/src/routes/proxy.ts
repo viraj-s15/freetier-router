@@ -44,6 +44,7 @@ import { claudeFamilyDiscoveryEntries, resolveListedClaudeAlias } from '../servi
 import { compressRequest, formatCompressionHeader } from '../services/compression/pipeline.js';
 import { applyDecisionRouting, routingStrategyHeader } from '../services/routing-decision.js';
 import { startStreamKeepalive, streamKeepaliveMs } from '../lib/stream-keepalive.js';
+import { discoveredDisableReason } from '../services/discovered-model-checks.js';
 
 export const proxyRouter = Router();
 
@@ -549,7 +550,7 @@ function buildCatalogEntries(filters: { onlyAvailable?: boolean; executionStatus
       context_length: m.contextWindow,
       // Non-standard but additive: OpenAI clients ignore unknown fields.
       available: m.available === 1,
-      unavailable_reason: m.available === 1 ? null : (m.enabled === 1 ? 'no_key' : 'disabled'),
+      unavailable_reason: m.available === 1 ? null : (m.enabled === 1 ? 'no_key' : discoveredDisableReason(m.id) ?? 'disabled'),
       // Machine-readable dynamic status: 'ready' | 'needsKey' | 'exhausted'
       // (see services/model-listing.ts). Agents can filter with
       // ?execution_status=ready and route around exhausted models.

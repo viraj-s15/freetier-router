@@ -15,6 +15,8 @@ import { customModelSeed } from './custom-model-seed.js';
 import { ensureModelInProfiles } from './profile-models.js';
 import { customModelSyncFreePatterns } from './custom-model-sync.js';
 import { acceptsModel, patternMatches, policyCanAccept } from './free-policy.js';
+import { addCheckRow, discoveredChecksOn, startDiscoveredModelChecks } from './discovered-model-checks.js';
+import { runProbeStep } from './discovered-model-probe.js';
 
 // ── Model discovery for built-in providers (#1348, widened by freetier-router) ──
 //
@@ -168,6 +170,8 @@ export interface RegisterDiscoveredResult {
  * updated, so catalog rows, user rows and anything the operator tuned by hand
  * all win. `explicit` marks a pick the operator made in the dashboard, which
  * lifts a previous deletion, the way re-adding a custom model does (#926).
+ * While the discovered-model checks are on, a model from an automatic pass
+ * starts off and not tool-capable, and waits for its probe.
  */
 export function registerDiscoveredModels(
   db: Db,
@@ -177,6 +181,7 @@ export function registerDiscoveredModels(
 ): RegisterDiscoveredResult {
   return db.transaction(() => {
     const result: RegisterDiscoveredResult = { created: [], existing: [], tombstoned: [] };
+    const held = !options.explicit && discoveredChecksOn();
     const seed = customModelSeed(db);
     const exists = db.prepare("SELECT 1 FROM models WHERE platform = ? AND model_id = ? AND endpoint_scope = ''");
     const insert = db.prepare(`
@@ -185,8 +190,8 @@ export function registerDiscoveredModels(
          rpm_limit, rpd_limit, tpm_limit, tpd_limit, monthly_token_budget, context_window, enabled, key_id,
          supports_tools, supports_vision, source, endpoint_scope)
       VALUES (@platform, @modelId, @modelId, @intelligenceRank, @speedRank, @sizeLabel,
-         @rpmLimit, @rpdLimit, NULL, NULL, '', @contextWindow, 1, NULL,
-         1, @vision, @source, '')
+         @rpmLimit, @rpdLimit, NULL, NULL, '', @contextWindow, @enabled, NULL,
+         @tools, @vision, @source, '')
       ON CONFLICT(platform, model_id, endpoint_scope) DO NOTHING
     `);
     const selectId = db.prepare("SELECT id FROM models WHERE platform = ? AND model_id = ? AND endpoint_scope = ''");
@@ -217,8 +222,11 @@ export function registerDiscoveredModels(
         contextWindow: entry.contextWindow ?? null,
         vision: entry.vision ? 1 : 0,
         source: DISCOVERED_MODEL_SOURCE,
+        enabled: held ? 0 : 1,
+        tools: held ? 0 : 1,
       });
       const row = selectId.get(platform, entry.modelId) as { id: number };
+      addCheckRow(db, row.id, options.explicit ? 'operator' : held ? 'held' : 'on', held ? 0 : 1);
       if (!inChain.get(row.id)) {
         addToChain.run(row.id, (maxPriority.get() as { m: number }).m + 1);
       }
@@ -319,6 +327,18 @@ export async function runBuiltinModelDiscovery(db: Db, only?: string): Promise<B
       result.failures.push({ platform, error: message });
       console.error(`[builtin-model-discovery] ${platform}: ${message}`);
     }
+    // Its own try: a failed /models call must not leave pending models unprobed.
+    try {
+      if (!isBuiltinDiscoveryEligible(db, platform)) continue;
+      const key = keys[0]!;
+      await runProbeStep(db, platform, eligibility.provider, {
+        keyId: key.id,
+        apiKey: decrypt(key.encrypted_key, key.iv, key.auth_tag),
+        proxyUrl: decryptProxyUrl(key),
+      });
+    } catch (err: any) {
+      console.error(`[builtin-model-discovery] ${platform}: probe step failed: ${err?.message ?? String(err)}`);
+    }
   }
   return result;
 }
@@ -376,6 +396,7 @@ export function resetBuiltinDiscoveryThrottle(): void {
  *  new model there. */
 export function startBuiltinModelDiscovery(db: Db, scheduler: Scheduler): (() => void) | null {
   const intervalMs = builtinDiscoveryIntervalMs();
+  startDiscoveredModelChecks(db, builtinDiscoveryMode() === 'auto');
   if (intervalMs <= 0 || builtinDiscoveryMode() !== 'auto') return null;
   return scheduler.every(intervalMs, () => { void runBuiltinModelDiscovery(db); }, { name: 'builtin-model-discovery' });
 }

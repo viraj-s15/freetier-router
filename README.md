@@ -22,10 +22,12 @@ Upstream FreeLLMAPI gets new models from a free catalog that runs 30 days behind
 - UnoRouter and BazaarLink add only their free routes. Every other provider adds nothing on its own, but you can still pick models under Fetch models.
 - A new model starts at the end of the fallback chain, with limits of 10 requests a minute and 250 a day. When the catalog lists it, the router uses the catalog's limits.
 - When the catalog drops a model, discovery doesn't add it back.
+- A new model starts off. The router sends it one small test request and turns it on if it answers, and a second test checks if it can call tools.
+- If a discovered model gets a 403 or a 404 on 3 separate requests in a day, the router turns it off. You can turn it back on under **Models**.
 
 If you add a payment method to a Groq, Mistral or SEA-LION account, set `BUILTIN_MODEL_DISCOVERY=manual`. Otherwise discovery can add models that cost money.
 
-Nobody tests discovered models first, so some of them can fail. If a model fails every time, turn it off on the **Models** page, so `auto` doesn't waste time on it. Free tiers can also train on your requests, so check each provider's terms before you send private data.
+Free tiers can train on your requests, so check each provider's terms before you send private data.
 
 The discovery settings are in [`.env.example`](.env.example) under "Model discovery". The rest of this README comes from upstream FreeLLMAPI, and this project has no connection to FreeLLMAPI or Neu Software LLC.
 
@@ -172,7 +174,7 @@ Set up FreeTier Router by following AGENT-SETUP.md in https://github.com/viraj-s
 
 ## Sync with upstream
 
-Run `scripts/fork/sync-upstream.sh` to merge new upstream FreeLLMAPI commits into this fork. The script merges in a separate worktree and runs the lint, the build and every test suite. It also runs the fork guard test and the pi client tests. Then it tests the new build on port 6970 with a copy of your DB. If all checks pass, it moves `main` forward and restarts the router on port 6969. If the new router fails, it puts back the old build and the DB. It never pushes.
+Run `scripts/fork/sync-upstream.sh` to merge new upstream FreeLLMAPI commits into this fork. The script merges in a separate worktree and runs the lint, the build and every test suite. It also runs the fork guard test, the fork's own feature tests and the pi client tests. Then it tests the new build on port 6970 with a copy of your DB. If all checks pass, it moves `main` forward and restarts the router on port 6969. If the new router fails, it puts back the old build and the DB. It never pushes.
 
 The steps, the options and what to do about merge conflicts are in [scripts/fork/README.md](scripts/fork/README.md). To let a coding agent do the sync, tell it:
 

@@ -23,7 +23,9 @@ LOG="$HOME/Library/Logs/freetier-router.log"
 DB="$MAIN/server/data/freeapi.db"
 PID_FILE="$MAIN/server/data/.router.pid"
 STAMP="$(date +%Y%m%d-%H%M%S)"
-BACKUPS="$MAIN/server/data/backups/sync-$STAMP"
+# Outside the repo: ESLint scans server/, so a copied dist there fails the lint step.
+BACKUP_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/freetier-router/sync-backups"
+BACKUPS="$BACKUP_ROOT/sync-$STAMP"
 REPORT="${TMPDIR:-/tmp}/freetier-sync-$STAMP"
 DISTS="server/dist client/dist shared/dist cli/dist"
 
@@ -117,6 +119,11 @@ run install npm ci
 run lint npm run lint
 run build npm run build
 run fork-guard npm run test -w server -- src/__tests__/fork
+# The fork's feature tests, from the list that the guard also checks.
+FORK_TESTS=()
+while IFS= read -r f; do FORK_TESTS+=("${f#server/}"); done < <("$NODE" -e 'for (const f of Object.keys(require(process.argv[1]))) console.log(f)' "$WT/scripts/fork/fork-tests.json")
+(( ${#FORK_TESTS[@]} > 0 )) || die "scripts/fork/fork-tests.json lists no test files."
+run fork-tests npm run test -w server -- "${FORK_TESTS[@]}"
 run tests npm test
 [[ -d "$PI_CONFIG/extensions/freetier/test" ]] || die "pi-config is not at $PI_CONFIG. Set PI_CONFIG_DIR."
 # sync.test.mjs compares pi-config's own rule docs, so router code can't break it.

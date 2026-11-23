@@ -19,12 +19,12 @@ This repo is a fork of [FreeLLMAPI](https://github.com/tashfeenahmed/freellmapi)
 Obey these rules during a sync:
 
 - Never push. Give the user the push command.
-- Never change the fork guard test or `scripts/fork/rebrand-manifest.json` to make a failure go away. A failure there means that the merge lost a fork feature, so fix the merge.
+- Never change the fork guard test, `scripts/fork/fork-tests.json` or `scripts/fork/rebrand-manifest.json` to make a failure go away. A failure there means that the merge lost a fork feature, so fix the merge.
 - Don't add fork files to upstream files when a new file can do the job, because each line in an upstream file can conflict on the next sync.
 - If the restart fails, the script rolls back on its own. Tell the user, and don't start the router by hand on a broken build.
 
 ## After you add a fork feature
 
 1. Put its tests in a new test file.
-2. Add that file and its test count to `FORK_TEST_FILES` in `server/src/__tests__/fork/fork-guard.test.ts`.
+2. Add that file and its test count to `scripts/fork/fork-tests.json`. The fork guard checks the list, and the sync script runs every file in it.
 3. Run `scripts/fork/sync-upstream.sh --check` to check the feature against the live setup.
